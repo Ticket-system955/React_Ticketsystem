@@ -8,7 +8,7 @@ export default function Login({ setTab,setIsLoggedIn }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const res = await fetch("https://reactticketsystem-production.up.railway.app/auth/login", {
+    const res = await fetch("https://reactticketsystem-production.up.railway.app/check_login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ login_id, password }),
