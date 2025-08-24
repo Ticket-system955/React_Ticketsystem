@@ -4,10 +4,10 @@ async def Check(request,reqT,sqlT):
     if response["status"]:
         try:
             data = response["data"]
-            loginIDInput = data["login_id"]
+            login_idInput = data["login_id"]
             passwordInput = data["password"]
 
-            GetUserData_result = sqlT.GetUserData(loginIDInput=loginIDInput,passwordInput=passwordInput)
+            GetUserData_result = sqlT.GetUserData(loginIDInput=login_idInput,passwordInput=passwordInput)
             
             if not GetUserData_result["status"]:
                 return GetUserData_result
@@ -15,23 +15,23 @@ async def Check(request,reqT,sqlT):
             userData = GetUserData_result["userData"]
             if userData:
                 
-                GetUserName_result = sqlT.GetUserName(loginIDInput=loginIDInput,passwordInput=passwordInput)
+                GetUserName_result = sqlT.GetUserName(loginIDInput=login_idInput,passwordInput=passwordInput)
                 if not GetUserName_result["status"]:
                     return GetUserName_result
                 userName = GetUserName_result["userName"]
 
-                GetUserID_result = sqlT.GetRegisterID(loginIDInput=loginIDInput,passwordInput=passwordInput)
+                GetUserID_result = sqlT.GetRegisterID(loginIDInput=login_idInput,passwordInput=passwordInput)
                 if not GetUserID_result:
                     return GetUserID_result
                 registerID = GetUserID_result["registerID"]
 
-                request.session["UserID"] = loginIDInput
+                request.session["UserID"] = login_idInput
                 request.session["UserName"] = userName
                 request.session["RegisterID"] = registerID
                 
                 return{"status":True,
                        "notify":"登入成功 !",
-                       "UserID":loginIDInput,
+                       "UserID":login_idInput,
                        "UserName":userName,
                        "RegisterID":registerID}
             else:
