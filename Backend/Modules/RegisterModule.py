@@ -19,7 +19,7 @@ async def CheckANDRegister(request,reqT,sqlT,totpT):
     if response["status"]:
         try:
             data = response["data"]
-            loginID = data["login_id"]
+            login_id = data["login_id"]
             IdType = data["IdType"]
             loginType = data["loginType"]
             password = data["password"]
@@ -36,7 +36,7 @@ async def CheckANDRegister(request,reqT,sqlT,totpT):
             totpobject = totpT.GetTotpObject(secret=secret)
             
             if user_input==totpobject.now():
-                InsertRegisterData_result = sqlT.InsertRegisterData(loginID,IdType,loginType,password,name,gender,
+                InsertRegisterData_result = sqlT.InsertRegisterData(login_id,IdType,loginType,password,name,gender,
                                                                     birthday,email,phone_number,mobile_number,address,secret)
                 if not InsertRegisterData_result["status"]:
                     return InsertRegisterData_result
