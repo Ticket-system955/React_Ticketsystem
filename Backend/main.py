@@ -32,7 +32,7 @@ async def ShowQRcode(request: Request):
 
 @app.post("/auth/verify/confirm")
 async def Register(request: Request):
-    response = await RegisterModule.CheckANDRegister(tools=tools,request=request)
+    response = await RegisterModule.CheckANDRegister(request=request,reqT=reqT,sqlT=sqlT,totpT=totpT)
     return JSONResponse(response)
 
 @app.post("/auth/login")
