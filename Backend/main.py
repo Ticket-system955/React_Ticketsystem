@@ -27,7 +27,7 @@ app.add_middleware(SessionMiddleware,secret_key=KEY)
 
 @app.post("/auth/verify/init")
 async def ShowQRcode(request: Request):
-    response = await RegisterModule.ShowQRcode(tools=tools,request=request)
+    response = await RegisterModule.ShowQRcode(request=request,reqT=reqT,totpT=totpT)
     return JSONResponse(response)
 
 @app.post("/auth/verify/confirm")
