@@ -366,7 +366,7 @@ export default function Register() {
             {totpSrc && (
               <div className="text-center my-4">
                 <p className="text-sm text-gray-600 mb-2">請使用 Google Authenticator 掃描 QR Code 並輸入驗證碼：</p>
-                <img src={qrcodesrc} alt="TOTP QR Code" className="mx-auto w-40 h-40" />
+                <img src={totpsrc} alt="TOTP QR Code" className="mx-auto w-40 h-40" />
               </div>
             )}
             <button
