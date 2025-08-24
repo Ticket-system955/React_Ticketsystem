@@ -15,6 +15,7 @@ async def ShowQRcode(request,reqT,totpT):
     return {"status":False}
     
 async def CheckANDRegister(request,reqT,sqlT,totpT):
+    return {"status":True}
     response = await reqT.GetJson(request=request)
     if response["status"]:
         try:
