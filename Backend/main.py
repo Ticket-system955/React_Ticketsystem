@@ -42,7 +42,6 @@ async def Login(request:Request):
 
 @app.get("/check_login")
 async def check_login(request: Request):
-       return JSONResponse({"status":True})
     if "UserID" in request.session:
         return JSONResponse({
             "logged_in": True,
