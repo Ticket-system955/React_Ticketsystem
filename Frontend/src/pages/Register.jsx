@@ -353,8 +353,6 @@ export default function Register() {
             <input
               type="text"
               inputMode="numeric"
-              pattern="\d{6}"
-              maxLength={6}
               className="w-full border px-3 py-2 rounded tracking-widest text-center"
               placeholder="請輸入 6 碼驗證碼"
               value={totpInput}
