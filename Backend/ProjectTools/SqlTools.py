@@ -131,22 +131,22 @@ class SqlTools(SqlBase):
 #------------------------------------------------------------------------------------
     def InsertRegisterData(self,loginID,IdType,loginType,password,name,gender,
                            birthday,email,phone_number,mobile_number,address,secret):
-        INSTRUCTION = """INSERT INTO register(login_id,IdType,loginType,password,name,gender,
+        
+
+        try:
+            INSTRUCTION = """INSERT INTO register(login_id,IdType,loginType,password,name,gender,
                                                   birthday,email,phone_number,mobile_number,address,secret)
                              VALUES(%s,%s,%s,%s,%s,%s,
                                     %s,%s,%s,%s,%s,%s)"""
-        SET=(self,loginID,IdType,loginType,password,name,gender,
+            SET=(self,loginID,IdType,loginType,password,name,gender,
                  birthday,email,phone_number,mobile_number,address,secret)
             
-        self.Execution(INSTRUCTION=INSTRUCTION,SET=SET)
-        return {"status":True}
-        '''
-        try:
-            
+            self.Execution(INSTRUCTION=INSTRUCTION,SET=SET)
+            return {"status":True}
         except Exception as e:
             return {"status":False,
                     "notify":f"InsertRegisterDataError ! message : [{type(e)} {e}]"}
-                    '''
+
 #------------------------------------------------------------------------------------
 
 #TicketModule
