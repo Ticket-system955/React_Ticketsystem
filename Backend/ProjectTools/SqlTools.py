@@ -140,7 +140,7 @@ class SqlTools(SqlBase):
                                                   birthday,email,phone_number,mobile_number,address,secret)
                              VALUES(%s,%s,%s,%s,%s,%s,
                                     %s,%s,%s,%s,%s,%s)"""
-            SET=(self,loginID,IdType,loginType,password,name,gender,
+            SET=(loginID,IdType,loginType,password,name,gender,
                  birthday,email,phone_number,mobile_number,address,secret)
             
             self.Execution(INSTRUCTION=INSTRUCTION,SET=SET)
