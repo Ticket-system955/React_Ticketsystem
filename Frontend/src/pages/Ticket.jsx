@@ -82,10 +82,8 @@ export default function Ticket() {
     const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // ✅ 1) 不要包成 { payload }，直接送平鋪欄位
-      body: JSON.stringify(payload),
-      // ✅ 2) 用到 session，務必帶 cookie
-      credentials: 'include'
+      credentials: 'include',             
+      body: JSON.stringify({ payload }) 
     })
     const data = await res.json()
 
@@ -94,7 +92,7 @@ export default function Ticket() {
       setShowVerify(false)
       setShowConfirm(false)
     } else {
-      alert(data.notify)
+    alert(data.notify || '購票失敗')
     }
   }
 
