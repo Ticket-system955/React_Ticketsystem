@@ -32,12 +32,12 @@ export default function Navbar() {
     check()
   }
 
- window.addEventListener('loginChange', handleLoginChange)
-
+  window.addEventListener('loginChange', handleStorageChange)
   return () => {
-  window.removeEventListener('loginChange', handleLoginChange)
+    window.removeEventListener('loginChange', handleStorageChange)
   }
 }, [])
+
 
   useEffect(() => {
   const shouldLockScroll = isSearchOpen || isMenuOpen;
@@ -100,7 +100,7 @@ export default function Navbar() {
                 credentials: 'include'
               })
               setIsLoggedIn(false)
-              localStorage.setItem('auth_status', Date.now().toString())
+              window.dispatchEvent(new Event('loginChange'))
               navigate('/')
             }}
             >
