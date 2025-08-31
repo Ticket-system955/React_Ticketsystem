@@ -94,11 +94,16 @@ export default function Navbar() {
         )}
 
           {isLoggedIn ? (
-            <button onClick={async () => {
-              await fetch('https://reactticketsystem-production.up.railway.app/auth/logout', { credentials: 'include' })
+            <button
+            onClick={async () => {
+              await fetch('https://reactticketsystem-production.up.railway.app/auth/logout', {
+                credentials: 'include'
+              })
               setIsLoggedIn(false)
-              navigate('/') 
-            }}>
+              localStorage.setItem('auth_status', Date.now().toString())
+              navigate('/')
+            }}
+            >
               <img src={image.logout} alt="Logout" className="w-6 h-6 hover:opacity-80" />
             </button>
           ) : (
