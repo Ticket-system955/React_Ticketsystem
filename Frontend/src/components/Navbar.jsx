@@ -15,7 +15,7 @@ export default function Navbar() {
  useEffect(() => {
   const check = async () => {
     try {
-      const res = await fetch('https://reactticketsystem-production.up.railway.app/check_login', {
+  const res = await fetch('https://reactticketsystem-production.up.railway.app/auth/check_login', {
         credentials: 'include' 
       })
       const data = await res.json()
@@ -55,12 +55,7 @@ export default function Navbar() {
   const handleCartClick = () => {
     setIsSearchOpen(false)
     setIsMenuOpen(false)
-    navigate('/shoppingcart')
-   // if (isLoggedIn) {
-     // navigate('/shoppingcart')
-   // } else {
-    //  navigate('/auth')
-   // }
+    navigate(isLoggedIn ? '/shoppingcart' : '/auth')
   }  
 
   return (
@@ -99,11 +94,16 @@ export default function Navbar() {
         )}
 
           {isLoggedIn ? (
-            <button onClick={async () => {
-              await fetch('https://reactticketsystem-production.up.railway.app/auth/logout', { credentials: 'include' })
+            <button
+            onClick={async () => {
+              await fetch('https://reactticketsystem-production.up.railway.app/auth/logout', {
+                credentials: 'include'
+              })
               setIsLoggedIn(false)
-              navigate('/') 
-            }}>
+              localStorage.setItem('auth_status', Date.now().toString())
+              navigate('/')
+            }}
+            >
               <img src={image.logout} alt="Logout" className="w-6 h-6 hover:opacity-80" />
             </button>
           ) : (
