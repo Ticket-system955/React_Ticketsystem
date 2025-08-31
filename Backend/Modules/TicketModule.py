@@ -119,30 +119,34 @@ async def RestoreTicket(request,redisT):
         return {"status":False,
                 "notify":f"TicketModule_RestoreTicketError ! message : [{type(e)} {e}]"}
 
-async def CheckTicketPurchased(request,reqT,sqlT):
-
+async def CheckTicketPurchased(request, reqT, sqlT):
     response = await reqT.GetJson(request=request)
-    if response["status"]:
-        try:
-            data = response["data"]
-            title = data["title"]
-            
-            GetEventID_result = sqlT.GetEventID(title=title)
-            if GetEventID_result["status"]:
-                event_id = GetEventID_result["event_id"]
-            else:
-                return GetEventID_result
-            
-            GetPurchasedData_result = sqlT.GetPurchasedData(event_id=event_id)
-            
-            if GetPurchasedData_result["status"]:
-                purchasedData = GetPurchasedData_result["purchasedData"]
-            else:
-                return GetPurchasedData_result
-            return {"status":True,
-                    "purchased":jsonable_encoder(purchasedData),
-                    "event_id":event_id}
-        except Exception as e:
-            return {"status":False,
-                    "notify":f"TicketModule_CheckTicketPurchasedError ! message : [{type(e)} {e}]"}
-    return response
+    if not response["status"]:
+        return response
+
+    try:
+        data = response["data"]
+        event_id = data.get("event_id")
+        title = data.get("title")
+
+        if not event_id:
+            if not title:
+                return {"status": False, "notify": "請提供 event_id 或 title"}
+            get_id = sqlT.GetEventID(title=title)
+            if not get_id["status"]:
+                return get_id
+            event_id = get_id["event_id"]
+
+        purchased = sqlT.GetPurchasedData(event_id=event_id)
+        if not purchased["status"]:
+            return purchased
+
+        return {
+            "status": True,
+            "purchased": jsonable_encoder(purchased["purchasedData"]),
+            "event_id": event_id
+        }
+
+    except Exception as e:
+        return {"status": False,
+                "notify": f"TicketModule_CheckTicketPurchasedError ! message : [{type(e)} {e}]"}
