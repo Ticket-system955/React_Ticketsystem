@@ -32,12 +32,12 @@ export default function Navbar() {
     check()
   }
 
-  window.addEventListener('storage', handleStorageChange)
+ window.addEventListener('loginChange', handleLoginChange)
+
   return () => {
-    window.removeEventListener('storage', handleStorageChange)
+  window.removeEventListener('loginChange', handleLoginChange)
   }
 }, [])
-
 
   useEffect(() => {
   const shouldLockScroll = isSearchOpen || isMenuOpen;
