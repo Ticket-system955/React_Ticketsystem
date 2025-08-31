@@ -45,10 +45,13 @@ export default function Ticket() {
 
   useEffect(() => {
     setEventTitle(qTitle)
+  }, [qTitle])
 
-    const init = async () => {
+  // Effect 1：用 title 取 event_id + purchased
+  useEffect(() => {
+    let cancelled = false
+    const loadAvailability = async () => {
       try {
-        // 1) 先拿已購清單 & event_id（注意 body 傳 { title }）
         const res = await fetch(`${API}/ticket/availability`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -61,14 +64,28 @@ export default function Ticket() {
           return
         }
         const j = await res.json()
-        if (j?.status) {
+        if (!j?.status) {
+          console.error('Get availability fail:', j)
+          return
+        }
+        if (!cancelled) {
           setEventID(j.event_id)
           setPurchased(j.purchased || [])
-        } else {
-          console.error('Get availability fail:', j)
         }
+      } catch (err) {
+        console.error('Init availability error:', err)
+      }
+    }
+    loadAvailability()
+    return () => { cancelled = true }
+  }, [qTitle])
 
-        // 2) 嘗試還原鎖
+  // Effect 2：拿到 eventID 後嘗試 restore
+  useEffect(() => {
+    if (!eventID) return
+    let cancelled = false
+    const restoreLock = async () => {
+      try {
         const restore = await fetch(`${API}/ticket/restore`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -76,16 +93,16 @@ export default function Ticket() {
           body: JSON.stringify({})
         })
         const rj = await restore.json()
+        if (cancelled) return
         if (rj?.status && Array.isArray(rj.seat)) {
           const [rid, areaDisplay, row, column] = rj.seat
-          // 後端回 seat 用中文區名（areaDisplay），我們需要找回對應 id
-          const areaId = toAreaId(areaDisplay)
-          if (Number(rid) === Number(j?.event_id)) {
+          if (Number(rid) === Number(eventID)) {
+            const areaId = toAreaId(areaDisplay) || areaDisplay // fallback
             setSelected({ area: areaId, row, col: column, disabled: false })
             setRestoring(true)
             setRestoreLeftSec(rj.time ?? 0)
             lockedSeatRef.current = {
-              event_id: j.event_id,
+              event_id: eventID,
               area: areaDisplay,
               row,
               column
@@ -93,12 +110,12 @@ export default function Ticket() {
           }
         }
       } catch (err) {
-        console.error('Init error:', err)
+        console.error('Restore error:', err)
       }
     }
-
-    init()
-  }, [qTitle])
+    restoreLock()
+    return () => { cancelled = true }
+  }, [eventID])
 
   // 還原倒數
   useEffect(() => {
@@ -137,7 +154,7 @@ export default function Ticket() {
 
   const toAreaId = (displayName) => {
     const found = Object.entries(areaMap).find(([, zh]) => zh === displayName)
-    return found ? found[0] : displayName
+    return found ? found[0] : null
   }
 
   const handleSelect = async (seat) => {
@@ -361,7 +378,7 @@ export default function Ticket() {
               setRestoreLeftSec(0)
             }}
           >
-            釋放座位
+          釋放座位
           </button>
         )}
       </div>
@@ -401,7 +418,7 @@ export default function Ticket() {
 
       {/* 驗證碼 Dialog */}
       {showVerify && selected && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 flex items中心 justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-center">
             <p className="font-bold mb-2">請輸入驗證碼：</p>
             <input
