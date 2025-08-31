@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import image from '../assets/image'
 
+const API = 'https://reactticketsystem-production.up.railway.app'
+
 const areaMap = {
   'rock-left': '搖滾區左',
   'rock-center': '搖滾區中',
@@ -38,7 +40,7 @@ export default function Ticket() {
 
     const fetchSeats = async () => {
       try {
-        const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket/availability', {
+        const res = await fetch(`${API}/ticket/availability`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title }),
@@ -50,6 +52,10 @@ export default function Ticket() {
           return
         }
         const json = await res.json()
+        if (!json?.status) {
+          console.error('Get availability fail:', json)
+          return
+        }
         setEventID(json.event_id)
         setPurchased(json.purchased || [])
       } catch (err) {
@@ -71,7 +77,12 @@ export default function Ticket() {
   }
 
   const confirmSubmit = async () => {
-    const payload = {
+    if (!selected) return alert('請先選擇一個座位')
+    if (!eventID) return alert('尚未取得 event_id，請重新整理頁面後再試')
+    if (!verifyCode) return alert('請輸入驗證碼')
+
+    // 準備資料（後端吃中文區名）
+    const flat = {
       area: areaMap[selected.area] || selected.area,
       row: selected.row,
       column: selected.col,
@@ -79,24 +90,49 @@ export default function Ticket() {
       event_id: eventID
     }
 
-    const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',             
-      body: JSON.stringify({ payload }) 
-    })
-    const data = await res.json()
+    try {
+      // 同時提供平鋪 & payload 以相容兩種解包方式
+      const res = await fetch(`${API}/ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ...flat, payload: { ...flat } })
+      })
+      if (!res.ok) {
+        const txt = await res.text()
+        console.error('Purchase HTTP Error:', res.status, txt)
+        alert('伺服器錯誤，請稍後再試')
+        return
+      }
+      const data = await res.json()
 
-    if (data.status) {
-      alert('購票成功')
-      setShowVerify(false)
-      setShowConfirm(false)
-    } else {
-    alert(data.notify || '購票失敗')
+      if (data.status) {
+        alert('購票成功')
+        setShowVerify(false)
+        setShowConfirm(false)
+
+        // 重新拉已購資料，將座位灰掉
+        const avail = await fetch(`${API}/ticket/availability`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: eventTitle }),
+          credentials: 'include'
+        }).then(r => r.json()).catch(() => null)
+
+        if (avail?.status) {
+          setEventID(avail.event_id)
+          setPurchased(avail.purchased || [])
+        }
+      } else {
+        alert(data.notify || '購票失敗')
+      }
+    } catch (err) {
+      console.error('confirmSubmit error:', err)
+      alert('網路異常，請稍後再試')
     }
   }
 
-  // ✅ 3) 轉成數字比較更保險（避免 DB 回字串）
+  // 以數字比較更保險（避免 DB 回字串導致比對失敗）
   const isDisabled = (area, row, col) =>
     purchased.some(
       ([dbArea, dbRow, dbCol]) =>
@@ -131,6 +167,7 @@ export default function Ticket() {
                       ? 'bg-blue-600 text-white'
                       : `${className} hover:opacity-80 active:scale-95`}
                 `}
+                title={`${areaMap[id]} ${row}排 ${col}位`}
               >
                 <img src={image.chair} alt="chair" className="w-4 h-4" />
               </button>
@@ -175,7 +212,7 @@ export default function Ticket() {
       </button>
 
       {/* 確認 Dialog */}
-      {showConfirm && (
+      {showConfirm && selected && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-left">
             <p className="font-bold mb-4">請確認您的訂票內容：</p>
@@ -205,7 +242,7 @@ export default function Ticket() {
       )}
 
       {/* 驗證碼 Dialog */}
-      {showVerify && (
+      {showVerify && selected && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-center">
             <p className="font-bold mb-2">請輸入驗證碼：</p>
