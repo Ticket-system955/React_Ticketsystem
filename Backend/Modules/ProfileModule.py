@@ -3,7 +3,7 @@ def GetProfileData(request,sqlT):
     try:
         loginID = request.session["UserID"]
         
-        profileColumn = ["login_id","name","gender","birthday",
+        profileColumn = ["login_id","name","password","gender","birthday",
                          "email","phone_number","mobile_number","address"]
         
         ticketColumn = ["title","date","location",
