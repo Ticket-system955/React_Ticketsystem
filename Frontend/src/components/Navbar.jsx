@@ -15,7 +15,7 @@ export default function Navbar() {
  useEffect(() => {
   const check = async () => {
     try {
-  const res = await fetch('https://reactticketsystem-production.up.railway.app/auth/check_login', {
+  const res = await fetch('https://reactticketsystem-production.up.railway.app/check_login', {
         credentials: 'include' 
       })
       const data = await res.json()
