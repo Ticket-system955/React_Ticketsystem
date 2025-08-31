@@ -1,8 +1,6 @@
 // src/pages/Ticket.jsx
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import image from '../assets/image'
-
-const API = 'https://reactticketsystem-production.up.railway.app'
 
 const areaMap = {
   'rock-left': '搖滾區左',
@@ -32,182 +30,39 @@ export default function Ticket() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showVerify, setShowVerify] = useState(false)
   const [verifyCode, setVerifyCode] = useState('')
-  const [restoring, setRestoring] = useState(false)
-  const [restoreLeftSec, setRestoreLeftSec] = useState(0)
-  const [loading, setLoading] = useState(false)
-
-  // 記錄「目前被我鎖住」的座位，離開頁面時釋放用
-  const lockedSeatRef = useRef(null)
-
-  // 從 URL 拿 title（你的 /ticket/availability 以 title 換 event_id）
-  const params = useMemo(() => new URLSearchParams(window.location.search), [])
-  const qTitle = useMemo(() => decodeURIComponent(params.get('title') || 'STAGE'), [params])
 
   useEffect(() => {
-    setEventTitle(qTitle)
-  }, [qTitle])
+    const params = new URLSearchParams(window.location.search)
+    const title = decodeURIComponent(params.get('title') || 'STAGE')
+    setEventTitle(title)
 
-  // Effect 1：用 title 取 event_id + purchased
-  useEffect(() => {
-    let cancelled = false
-    const loadAvailability = async () => {
+    const fetchSeats = async () => {
       try {
-        const res = await fetch(`${API}/ticket/availability`, {
+        const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket/availability', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ title: qTitle })
+          body: JSON.stringify({ title }),
+          credentials: 'include'
         })
         if (!res.ok) {
-          const t = await res.text()
-          console.error('Availability Error:', res.status, t)
+          const txt = await res.text()
+          console.error('Availability Error:', res.status, txt)
           return
         }
-        const j = await res.json()
-        if (!j?.status) {
-          console.error('Get availability fail:', j)
-          return
-        }
-        if (!cancelled) {
-          setEventID(j.event_id)
-          setPurchased(j.purchased || [])
-        }
+        const json = await res.json()
+        setEventID(json.event_id)
+        setPurchased(json.purchased || [])
       } catch (err) {
-        console.error('Init availability error:', err)
+        console.error('Fetch availability failed', err)
       }
     }
-    loadAvailability()
-    return () => { cancelled = true }
-  }, [qTitle])
 
-  // Effect 2：拿到 eventID 後嘗試 restore
-  useEffect(() => {
-    if (!eventID) return
-    let cancelled = false
-    const restoreLock = async () => {
-      try {
-        const restore = await fetch(`${API}/ticket/restore`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({})
-        })
-        const rj = await restore.json()
-        if (cancelled) return
-        if (rj?.status && Array.isArray(rj.seat)) {
-          const [rid, areaDisplay, row, column] = rj.seat
-          if (Number(rid) === Number(eventID)) {
-            const areaId = toAreaId(areaDisplay) || areaDisplay // fallback
-            setSelected({ area: areaId, row, col: column, disabled: false })
-            setRestoring(true)
-            setRestoreLeftSec(rj.time ?? 0)
-            lockedSeatRef.current = {
-              event_id: eventID,
-              area: areaDisplay,
-              row,
-              column
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Restore error:', err)
-      }
-    }
-    restoreLock()
-    return () => { cancelled = true }
-  }, [eventID])
-
-  // 還原倒數
-  useEffect(() => {
-    if (!restoring || restoreLeftSec <= 0) return
-    const timer = setInterval(() => {
-      setRestoreLeftSec(sec => {
-        if (sec <= 1) {
-          setRestoring(false)
-          lockedSeatRef.current = null
-          return 0
-        }
-        return sec - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [restoring, restoreLeftSec])
-
-  // 離開頁面釋放鎖
-  useEffect(() => {
-    const onUnload = async () => {
-      if (!lockedSeatRef.current) return
-      const { event_id, area, row, column } = lockedSeatRef.current
-      try {
-        await fetch(`${API}/ticket/cancel`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          keepalive: true,
-          body: JSON.stringify({ event_id, area, row, column })
-        })
-      } catch (_) {}
-    }
-    window.addEventListener('beforeunload', onUnload)
-    return () => window.removeEventListener('beforeunload', onUnload)
+    fetchSeats()
   }, [])
 
-  const toAreaId = (displayName) => {
-    const found = Object.entries(areaMap).find(([, zh]) => zh === displayName)
-    return found ? found[0] : null
-  }
-
-  const handleSelect = async (seat) => {
-    if (seat.disabled || !eventID || loading) return
-
-    setLoading(true)
-    try {
-      // 先檢查一人一票
-      const check = await fetch(`${API}/ticket/check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ event_id: eventID })
-      }).then(r => r.json())
-
-      if (!check?.status) {
-        alert(check?.notify || '不可購買')
-        return
-      }
-
-      // 鎖票（後端吃中文區名）
-      const lockRes = await fetch(`${API}/ticket/lock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          event_id: eventID,
-          area: areaMap[seat.area] || seat.area,
-          row: seat.row,
-          column: seat.col
-        })
-      }).then(r => r.json())
-
-      if (!lockRes?.status) {
-        alert(lockRes?.notify || '鎖票失敗')
-        return
-      }
-
-      // 鎖成功才記錄選取 & 本地鎖
-      setSelected(seat)
-      lockedSeatRef.current = {
-        event_id: eventID,
-        area: areaMap[seat.area] || seat.area,
-        row: seat.row,
-        column: seat.col
-      }
-      setRestoring(true)
-      setRestoreLeftSec(lockRes.expire_seconds ?? 0)
-    } catch (err) {
-      console.error('handleSelect error:', err)
-    } finally {
-      setLoading(false)
-    }
+  const handleSelect = (seat) => {
+    if (seat.disabled) return
+    setSelected(seat)
   }
 
   const handleSubmit = () => {
@@ -215,77 +70,39 @@ export default function Ticket() {
     setShowConfirm(true)
   }
 
-  const cancelLock = async () => {
-    if (!lockedSeatRef.current) return
-    const { event_id, area, row, column } = lockedSeatRef.current
-    try {
-      const cancel = await fetch(`${API}/ticket/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ event_id, area, row, column })
-      }).then(r => r.json())
-      if (!cancel?.status) console.warn('取消鎖票失敗：', cancel?.notify)
-    } catch (err) {
-      console.error('cancelLock error:', err)
-    } finally {
-      lockedSeatRef.current = null
-    }
-  }
-
   const confirmSubmit = async () => {
-    if (!selected || !eventID) return
-    if (!verifyCode) return alert('請輸入驗證碼')
-
-    const body = {
-      event_id: eventID,
+    const payload = {
       area: areaMap[selected.area] || selected.area,
       row: selected.row,
       column: selected.col,
-      totpcode_input: verifyCode
+      totpcode_input: verifyCode,
+      event_id: eventID
     }
 
-    try {
-      const res = await fetch(`${API}/ticket`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body)
-      })
-      const data = await res.json()
+    const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // ✅ 1) 不要包成 { payload }，直接送平鋪欄位
+      body: JSON.stringify(payload),
+      // ✅ 2) 用到 session，務必帶 cookie
+      credentials: 'include'
+    })
+    const data = await res.json()
 
-      if (data.status) {
-        alert('購票成功')
-        setShowVerify(false)
-        setShowConfirm(false)
-        setSelected(null)
-        setVerifyCode('')
-        lockedSeatRef.current = null
-
-        // 重新載入已購，將剛買到的座位灰掉
-        const avail = await fetch(`${API}/ticket/availability`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ title: eventTitle })
-        }).then(r => r.json())
-        if (avail?.status) {
-          setEventID(avail.event_id)
-          setPurchased(avail.purchased || [])
-        }
-      } else {
-        alert(data.notify || '購票失敗')
-      }
-    } catch (err) {
-      console.error('confirmSubmit error:', err)
-      alert('購票失敗，請稍後再試')
+    if (data.status) {
+      alert('購票成功')
+      setShowVerify(false)
+      setShowConfirm(false)
+    } else {
+      alert(data.notify)
     }
   }
 
-  const isDisabled = (areaId, row, col) =>
+  // ✅ 3) 轉成數字比較更保險（避免 DB 回字串）
+  const isDisabled = (area, row, col) =>
     purchased.some(
       ([dbArea, dbRow, dbCol]) =>
-        dbArea === (areaMap[areaId] || areaId) &&
+        dbArea === areaMap[area] &&
         Number(dbRow) === Number(row) &&
         Number(dbCol) === Number(col)
     )
@@ -306,7 +123,7 @@ export default function Ticket() {
             return (
               <button
                 key={c}
-                disabled={used || loading}
+                disabled={used}
                 onClick={() => handleSelect({ area: id, row, col, disabled: used })}
                 className={`
                   w-6 h-6 p-0 m-[1px] flex items-center justify-center rounded
@@ -316,7 +133,6 @@ export default function Ticket() {
                       ? 'bg-blue-600 text-white'
                       : `${className} hover:opacity-80 active:scale-95`}
                 `}
-                title={`${areaMap[id]} ${row}排 ${col}位`}
               >
                 <img src={image.chair} alt="chair" className="w-4 h-4" />
               </button>
@@ -329,12 +145,7 @@ export default function Ticket() {
 
   return (
     <div className="mt-20 p-6 text-center">
-      <h1 className="text-3xl font-bold mb-2">{eventTitle}</h1>
-      {restoring && restoreLeftSec > 0 && (
-        <p className="text-sm text-orange-600 mb-2">
-          已為你保留上一個座位（{restoreLeftSec}s）
-        </p>
-      )}
+      <h1 className="text-3xl font-bold mb-4">{eventTitle}</h1>
       <div className="bg-black text-white w-[760px] mx-auto py-2 font-bold mb-6">-----------------</div>
 
       {/* 上層：搖滾區 */}
@@ -358,33 +169,15 @@ export default function Ticket() {
           : '尚未選擇任何座位'}
       </p>
 
-      <div className="mt-4 flex items-center justify-center gap-3">
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-          onClick={handleSubmit}
-          disabled={!selected || loading}
-        >
-          確定
-        </button>
-        {lockedSeatRef.current && (
-          <button
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-            onClick={async () => {
-              await cancelLock()
-              setSelected(null)
-              setShowConfirm(false)
-              setShowVerify(false)
-              setRestoring(false)
-              setRestoreLeftSec(0)
-            }}
-          >
-          釋放座位
-          </button>
-        )}
-      </div>
+      <button
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        onClick={handleSubmit}
+      >
+        確定
+      </button>
 
       {/* 確認 Dialog */}
-      {showConfirm && selected && (
+      {showConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-left">
             <p className="font-bold mb-4">請確認您的訂票內容：</p>
@@ -403,10 +196,7 @@ export default function Ticket() {
                 確定
               </button>
               <button
-                onClick={async () => {
-                  setShowConfirm(false)
-                  await cancelLock()
-                }}
+                onClick={() => setShowConfirm(false)}
                 className="bg-red-500 text-white px-4 py-2 rounded"
               >
                 取消
@@ -417,8 +207,8 @@ export default function Ticket() {
       )}
 
       {/* 驗證碼 Dialog */}
-      {showVerify && selected && (
-        <div className="fixed inset-0 flex items中心 justify-center bg-black/50">
+      {showVerify && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-center">
             <p className="font-bold mb-2">請輸入驗證碼：</p>
             <input
@@ -438,7 +228,7 @@ export default function Ticket() {
                 onClick={() => setShowVerify(false)}
                 className="bg-gray-500 text-white px-4 py-2 rounded"
               >
-                返回
+                取消
               </button>
             </div>
           </div>
