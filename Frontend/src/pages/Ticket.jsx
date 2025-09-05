@@ -64,17 +64,6 @@ export default function Ticket() {
   const [showVerify, setShowVerify] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
 
-  const debugAll = () => {
-    console.log("=== Debug 全部狀態 ===", {
-      eventID,
-      eventIdFromUrl,
-      eventTitle,
-      eventLocation,
-      selected,
-      purchased,
-      verifyCode
-    });
-  };
   // 頁面初始化：抓活動資料 & 已售/已鎖座位
   useEffect(() => {
     if (!concert) {
@@ -143,8 +132,10 @@ export default function Ticket() {
       totpcode_input: verifyCode,
       event_id: finalEventId
     };
-    console.log('[confirmSubmit] payload =', payload);
-
+console.log("=== confirmSubmit payload keys & values ===");
+Object.entries(payload).forEach(([key, value]) => {
+  console.log(`${key}:`, value);
+});
     try {
       const { res, json } = await logFetch(
         'https://reactticketsystem-production.up.railway.app/ticket',
@@ -234,12 +225,7 @@ export default function Ticket() {
       <h1 className="text-3xl font-bold mb-1">{eventTitle}</h1>
       <h3 className="text-base mb-4 opacity-70">{eventLocation && `${eventLocation} 場`}</h3>
       <div className="bg-black text-white w-[760px] mx-auto py-2 font-bold mb-6">-----------------</div>
- <button
-        onClick={debugAll}
-        className="mb-4 px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
-      >
-        Debug 印出所有狀態
-      </button>
+
       {/* 上層：搖滾區 */}
       <div className="flex justify-center gap-8 mb-2">
         {seatConfig.slice(0, 3).map(renderSection)}
