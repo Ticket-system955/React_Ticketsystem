@@ -25,24 +25,26 @@ const seatConfig = [
 
 export default function Ticket() {
   const { id } = useParams();                     
+  const eventIdFromUrl = Number(concertsData.id);              
   const concert = concertsData.find(c => String(c.id) === String(id));
 
   const [selected, setSelected] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
-  const [eventlocation, setEventLocation] = useState('');
+  const [eventLocation, setEventLocation] = useState('');
   const [eventID, setEventID] = useState(null);   
   const [purchased, setPurchased] = useState([]); 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showVerify, setShowVerify] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
 
+  // 頁面初始化：抓活動資料 & 已售/已鎖座位
   useEffect(() => {
     if (!concert) return; // 找不到演唱會，直接跳出
 
-  setEventTitle(concert.title);
-  setEventLocation(concert.location);
-  const eventId = Number(id); // 送後端用數字 id
-
+    const title = concert.name;
+    const location = concert.location;
+    setEventTitle(title);
+    setEventLocation(location);
     const fetchSeats = async () => {
       try {
         const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket/availability', {
@@ -51,7 +53,7 @@ export default function Ticket() {
           credentials: 'include',   // 需要 session
           body: JSON.stringify({
             data: {
-              event_id: concert,                         
+              event_id: eventIdFromUrl, // ✅ 建議以 event_id 為主
             }
           })
         });
@@ -102,7 +104,7 @@ export default function Ticket() {
       const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
+        credentials: 'include', // ✅ 送購票也要帶 session
         body: JSON.stringify({ data: payload })
       });
       const data = await res.json();
@@ -178,8 +180,8 @@ export default function Ticket() {
 
   return (
     <div className="mt-20 p-6 text-center">
-      <h1 className="text-3xl font-bold mb-4">{eventTitle}</h1><br/>
-      <h3 className="text-3xl font-bold mb-4">{eventlocation}場</h3>
+      <h1 className="text-3xl font-bold mb-4">{eventTitle}</h1>
+      <h3 className="text-3xl font-bold mb-4">{eventLocation}場</h3>
       <div className="bg-black text-white w-[760px] mx-auto py-2 font-bold mb-6">-----------------</div>
 
       {/* 上層：搖滾區 */}
