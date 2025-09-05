@@ -76,11 +76,12 @@ async def CheckTicket(request,reqT,redisT):
         try:
             
             data = response["data"]
-            registerID = request.session["RegisterID"]
+            #registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             userName = request.session["UserName"]
             event_id = data["event_id"]
             
-            TicketCheck_result = redisT.TicketCheck(event_id=event_id,registerID=registerID,userName=userName)
+            TicketCheck_result = redisT.TicketCheck(event_id=event_id,loginID=loginID,userName=userName)
             return TicketCheck_result
         
         except Exception as e:
