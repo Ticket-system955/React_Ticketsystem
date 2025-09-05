@@ -2,7 +2,9 @@ import pymysql
 from urllib.parse import urlparse
 
 '''父類別
-'''
+    存放:
+        1.連線資料
+        2.子類別需要的額外函式'''
 class SqlBase:
     def __init__(self,url):
         self.url = urlparse(url)
@@ -46,7 +48,7 @@ class SqlBase:
         return ticket
 
 
-
+''''''
 class SqlTools(SqlBase):
     
     def __init__(self,URL):
