@@ -1,6 +1,8 @@
 import pymysql
 from urllib.parse import urlparse
 
+'''父類別
+'''
 class SqlBase:
     def __init__(self,url):
         self.url = urlparse(url)
