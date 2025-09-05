@@ -5,7 +5,8 @@ async def Lock(request,reqT,redisT):
     response = await reqT.GetJson(request = request)
     if response["status"]:
         try:
-            registerID = request.session["RegisterID"]
+            #registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             
             data = response["data"]
             area = data["area"]
@@ -14,9 +15,9 @@ async def Lock(request,reqT,redisT):
             event_id = data["event_id"]
             
             seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
-            userSeatIndexKey = f"<userSeatIndex>:[{registerID}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
             
-            TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,registerID=registerID)
+            TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,loginID=loginID)
             return TicketLock_result
         except Exception as e:
             return {"status":False,
@@ -39,6 +40,9 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             row = data["row"]
             column = data["column"]
             totpcode = data["totpcode_input"]
+            
+            seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
 
             GetSecret_result = sqlT.GetSecret(loginID=loginID)
             if not GetSecret_result["status"]:
@@ -52,7 +56,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
                 InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
                 if InsertTicketData_result["status"]:
                     
-                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,registerID=registerID)
+                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,loginID=loginID,seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey)
                     if not TicketSuccess_result["status"]:
                         return TicketSuccess_result
                     
@@ -75,11 +79,12 @@ async def CheckTicket(request,reqT,redisT):
         try:
             
             data = response["data"]
-            registerID = request.session["RegisterID"]
+            #registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             userName = request.session["UserName"]
             event_id = data["event_id"]
             
-            TicketCheck_result = redisT.TicketCheck(event_id=event_id,registerID=registerID,userName=userName)
+            TicketCheck_result = redisT.TicketCheck(event_id=event_id,loginID=loginID,userName=userName)
             return TicketCheck_result
         
         except Exception as e:
@@ -91,14 +96,15 @@ async def CancelTicket(request,reqT,redisT):
     response = await reqT.GetJson(request = request)
     if response["status"]:
         try:
-            registerID = request.session["RegisterID"]
+            #registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             data = response["data"]
             event_id = data["event_id"]
             area = data["area"]
             row = data["row"]
             column = data["column"]
             seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
-            userSeatIndexKey = f"<userSeatIndex>:[{registerID}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
             TicketCancel_result = redisT.TicketCancel(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey)
             if TicketCancel_result["status"]:
                 TicketCancel_result["notify"] = f"{seatLockKey} 已釋放 !"
@@ -111,9 +117,10 @@ async def CancelTicket(request,reqT,redisT):
 
 async def RestoreTicket(request,redisT):
     try:
-        registerID = request.session["RegisterID"]
-        userSeatIndexKey = f"<userSeatIndex>:[{registerID}]"
-        TicketRestore_result = redisT.TicketRestore(userSeatIndexKey=userSeatIndexKey,registerID=registerID)
+        #registerID = request.session["RegisterID"]
+        loginID = request.session["UserID"]
+        userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
+        TicketRestore_result = redisT.TicketRestore(userSeatIndexKey=userSeatIndexKey,loginID=loginID)
         return TicketRestore_result
     except Exception as e:
         return {"status":False,

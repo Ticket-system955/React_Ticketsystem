@@ -39,8 +39,8 @@ async def Register(request: Request):
 async def Login(request:Request):
     response = await LoginModule.Check(request=request,reqT=reqT,sqlT=sqlT)
     return JSONResponse(response)
-
 @app.get("/check_login")
+#@app.get("/auth/login/check")
 async def check_login(request: Request):
     if "UserID" in request.session:
         return JSONResponse({
