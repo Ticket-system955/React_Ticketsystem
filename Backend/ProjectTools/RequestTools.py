@@ -1,6 +1,6 @@
 '''將使用者傳入的資料作例外處理跟解析'''
 class RequestTools:
-    async def GetJson(self,request):
+    async def GetJson(self,request):z
         try:
             data = await request.json()
             return {"status":True,"notify":"前端資料取得成功 !","data":data}
