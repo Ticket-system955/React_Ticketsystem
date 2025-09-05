@@ -4,8 +4,6 @@ async def Lock(request,reqT,redisT):
     
     response = await reqT.GetJson(request = request)
     if response["status"]:
-
-        
         try:
             #registerID = request.session["RegisterID"]
             loginID = request.session["UserID"]
@@ -21,11 +19,9 @@ async def Lock(request,reqT,redisT):
             
             TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,loginID=loginID)
             return TicketLock_result
-        
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketModule_LockError ! message : [{type(e)} {e}]"}
-                    
     return response
 
 
@@ -75,7 +71,6 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             return {"status":False,
                     "notify":f"TicketModule_GetTicketDataError ! message : [{type(e)} {e}]"}
     return response
-
 
 async def CheckTicket(request,reqT,redisT):
     
@@ -159,7 +154,3 @@ async def CheckTicketPurchased(request, reqT, sqlT):
             "purchased": jsonable_encoder(purchased["purchasedData"]),
             "event_id": event_id
         }
-
-    except Exception as e:
-        return {"status": False,
-                "notify": f"TicketModule_CheckTicketPurchasedError ! message : [{type(e)} {e}]"}
