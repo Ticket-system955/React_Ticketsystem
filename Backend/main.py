@@ -25,25 +25,74 @@ redisT = RedisTools(URL=url["redis"])
 KEY = "ticket_key"
 app.add_middleware(SessionMiddleware,secret_key=KEY)
 
-'''註冊完成顯示QRcode'''
+#@app.post("/auth/verify/init")
+'''
+1.使用時機:註冊資料填寫完畢並按下確認後
+
+2.功能:回傳Totp的QRcode資料
+
+3.說明:若成功
+         則回傳src -> return {"status":True,"totpsrc":src}
+         
+       例外處理
+         回傳錯誤訊息->return {"status":False,
+                              "notify":f"ShowQRcodeError !"}'''
 @app.post("/auth/verify/init")
 async def ShowQRcode(request: Request):
     response = await RegisterModule.ShowQRcode(request=request,reqT=reqT,totpT=totpT)
     return JSONResponse(response)
+       
+#@app.post("/auth/verify/confirm")
+'''
+1.使用時機:輸入totp驗證碼後
 
-'''送出註冊資料，並驗證Totp驗證碼'''
+2.功能:確認驗證碼是否成功，及送出註冊資料
+
+3.說明:若驗證碼輸入正確，且驗證成功
+         若資料寫入錯誤
+           則回傳錯誤訊息->return {"status":False,
+                                  "notify":f"InsertRegisterDataError ! data : [{data}]"}
+         否則寫入成功，並回傳->return {"status":True,
+                                     "notify":"註冊成功 !",
+                                     "secret":secret}
+       否則
+         回傳錯誤訊息->return {"status":False,
+                              "notify":"註冊失敗 !"}
+                              
+       例外處理
+         回傳錯誤訊息->return {"status":False,
+                              "notify":f"CheckANDRegisterError !"}'''
 @app.post("/auth/verify/confirm")
 async def Register(request: Request):
     response = await RegisterModule.CheckANDRegister(request=request,reqT=reqT,sqlT=sqlT,totpT=totpT)
     return JSONResponse(response)
 
-'''驗證使用者登入'''
+'''
+1.使用時機:輸入totp驗證碼時
+
+2.功能:確認驗證碼是否成功，及送出註冊資料
+
+3.說明:若驗證碼輸入正確，且驗證成功
+         若資料寫入錯誤
+           則回傳錯誤訊息->return {"status":False,
+                                  "notify":f"InsertRegisterDataError ! data : [{data}]"}
+         否則寫入成功，並回傳->return {"status":True,
+                                     "notify":"註冊成功 !",
+                                     "secret":secret}
+       否則
+         回傳錯誤訊息->return {"status":False,
+                              "notify":"註冊失敗 !"}
+                              
+       例外處理
+         回傳錯誤訊息->return {"status":False,
+                              "notify":f"CheckANDRegisterError !"}'''
 @app.post("/auth/login")
 async def Login(request:Request):
     response = await LoginModule.Check(request=request,reqT=reqT,sqlT=sqlT)
     return JSONResponse(response)
 
-
+'''
+'''
 @app.get("/check_login")
 #@app.get("/auth/login/check")
 async def check_login(request: Request):
@@ -59,6 +108,25 @@ async def check_login(request: Request):
             "logged_in": False
         })
 
+'''
+1.使用時機:點選登出選項時
+
+2.功能:確認驗證碼是否成功，及送出註冊資料
+
+3.說明:若驗證碼輸入正確，且驗證成功
+         若資料寫入錯誤
+           則回傳錯誤訊息->return {"status":False,
+                                  "notify":f"InsertRegisterDataError ! data : [{data}]"}
+         否則寫入成功，並回傳->return {"status":True,
+                                     "notify":"註冊成功 !",
+                                     "secret":secret}
+       否則
+         回傳錯誤訊息->return {"status":False,
+                              "notify":"註冊失敗 !"}
+                              
+       例外處理
+         回傳錯誤訊息->return {"status":False,
+                              "notify":f"CheckANDRegisterError !"}'''
 @app.get("/auth/logout")
 async def Logout(request:Request):
     response = await LogoutModule.Logout(request=request)
