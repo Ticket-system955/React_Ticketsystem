@@ -1,10 +1,6 @@
 import redis
 from urllib.parse import urlparse
 
-'''父類別
-    存放:
-        1.連線資料
-        2.子類別需要的額外函式'''
 class RedisBase:
     def __init__(self,url):
             self.url = urlparse(url)
@@ -17,18 +13,10 @@ class RedisBase:
         return key
             
     
-'''子類別
-    存放:
-        1.各模組需要的功能
-        2.簡易例外處理'''
+
 class RedisTools(RedisBase):
     def __init__(self,URL):
         super().__init__(URL)
-    '''鎖票機制
-        防止多人對同一張票進行購買，只要任意使用者確定要購買，呼叫此函式
-        可以將此票的選擇權關閉，達到防止超賣的目的
-        同時，若使用者任一活動中有鎖票程序且進行中
-        則在其他活動不可以同時選購第二張(或以上)的票'''
     def TicketLock(self,seatLockKey,userSeatIndexKey,loginID):
         try:
             lock = self.r.get(seatLockKey)
@@ -47,24 +35,23 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketLockError ! message : {type(e)} {e}"}
-
-    '''購票成功時，呼叫此函式'''
+        
+    
     def TicketSuccess(self,event_id,loginID,seatLockKey,userSeatIndexKey):
         try:
             self.r.lpush(event_id,loginID)
             deleteSeatLockKey = self.r.delete(seatLockKey)
             deleteUserSeatIndexKey = self.r.delete(userSeatIndexKey)
-            
             if not (deleteSeatLockKey and deleteUserSeatIndexKey):
                 return {"status":False,
-                        "notify":f"{seatLockKey},{userSeatIndexKey}"}
+                        "notify":"鎖票鍵移除時出現問題，請檢查鎖票序列 !"}
+            
             return {"status":True,
                     "notify":f"loginID : {loginID} 已 push 至 Redis 序列 !"}
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-
-    '''檢查在同一個活動中，是否重複訂票'''
+    
     def TicketCheck(self,event_id,loginID,userName):
         try:
             if loginID in self.r.lrange(event_id,0,-1):
@@ -74,14 +61,13 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-
-    '''取消鎖票，釋放票券購買權利'''
+    
     def TicketCancel(self,seatLockKey,userSeatIndexKey):
         try:
             deleteSeatLockKey = self.r.delete(seatLockKey)
             deleteUserSeatIndexKey = self.r.delete(userSeatIndexKey)
             if deleteSeatLockKey and deleteUserSeatIndexKey:
-                return {"status":True,"notify":"鎖票鍵移除時出現問題，請檢查鎖票序列 !"}
+                return {"status":True,"notify":f"{seatLockKey} & {userSeatIndexKey} 已從 Redis 中刪除 !"}
             else:
                 notify = []
                 if not deleteSeatLockKey:
@@ -93,10 +79,8 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketCancelError ! message : {type(e)} {e}"}
-
-    '''若跳出購票視窗，再次進入同一個活動時，呼叫此函式
-        幫忙判斷是否為同一位使用者
-        目標是為了防止多人同時進入同一個活動進行購買，構成超賣問題'''
+        
+    
     def TicketRestore(self,userSeatIndexKey,loginID):
         try:
             seatLockKey = self.r.get(userSeatIndexKey)
