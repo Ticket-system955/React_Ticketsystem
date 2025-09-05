@@ -40,6 +40,9 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             row = data["row"]
             column = data["column"]
             totpcode = data["totpcode_input"]
+            
+            seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
 
             GetSecret_result = sqlT.GetSecret(loginID=loginID)
             if not GetSecret_result["status"]:
@@ -53,7 +56,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
                 InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
                 if InsertTicketData_result["status"]:
                     
-                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,loginID=loginID)
+                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,loginID=loginID,seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey)
                     if not TicketSuccess_result["status"]:
                         return TicketSuccess_result
                     
