@@ -13,7 +13,7 @@ async def Lock(request,reqT,redisT):
             row = data["row"]
             column = data["column"]
             event_id = data["event_id"]
-
+            
             seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
             userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
             
@@ -27,7 +27,6 @@ async def Lock(request,reqT,redisT):
 
 async def GetTicketData(request,reqT,sqlT,totpT,redisT):
     
-    
     response = await reqT.GetJson(request = request)
     if response["status"]:
         
@@ -36,7 +35,6 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             loginID = request.session["UserID"]
             
             data = response["data"]
-
             event_id = data["event_id"]
             area = data["area"]
             row = data["row"]
@@ -50,17 +48,11 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             if not GetSecret_result["status"]:
                 return GetSecret_result
             
-            GetSecret_result = totpT.GetSecret(request=request)
-            if not GetSecret_result["status"]:
-                return GetSecret_result
             secret = GetSecret_result["secret"]
-            
-            GetTotpObject_result = totpT.GetTotpObject(secret=secret)
-            if not GetTotpObject_result["status"]:
-                return GetTotpObject_result
-            totpobject = GetTotpObject_result["totpobject"]
+            totpobject = totpT.GetTotpObject(secret)
             
             if totpcode == str(totpobject.now()):
+                
                 InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
                 if InsertTicketData_result["status"]:
                     
