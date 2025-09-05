@@ -34,7 +34,7 @@ async function logFetch(url, options) {
   }
   try {
     const res = await fetch(url, options);
-    const raw = await res.clone().text(); // 先抓 raw，避免 JSON parse 失敗沒線索
+    const raw = await res.clone().text();
     console.log('Status:', res.status);
     console.log('Headers:', Object.fromEntries(res.headers.entries()));
     console.log('Raw response:', raw);
@@ -51,18 +51,26 @@ async function logFetch(url, options) {
 }
 
 export default function Ticket() {
-  const { id } = useParams();                     
-  const eventIdFromUrl = Number(id);             
+  const { id } = useParams();
+  const eventIdFromUrl = Number(id);
   const concert = concertsData.find(c => String(c.id) === String(id));
 
   const [selected, setSelected] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
   const [eventLocation, setEventLocation] = useState('');
-  const [eventID, setEventID] = useState(null);   
-  const [purchased, setPurchased] = useState([]); 
+  const [eventID, setEventID] = useState(null);
+  const [purchased, setPurchased] = useState([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showVerify, setShowVerify] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
+  const [isLocking, setIsLocking] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 本地鎖與倒數（避免驗證失敗/取消時座位長期反灰）
+  const [lockedByMe, setLockedByMe] = useState(null); // {area,row,column,expiresAt}
+  const [lockCountdown, setLockCountdown] = useState(null); // 秒
+
+  const isCodeReady = /^\d{6}$/.test(verifyCode);
 
   // 頁面初始化：抓活動資料 & 已售/已鎖座位
   useEffect(() => {
@@ -83,16 +91,13 @@ export default function Ticket() {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',   // 需要 session
-            body: JSON.stringify({
-            event_id: eventIdFromUrl  
-            })
+            credentials: 'include',
+            body: JSON.stringify({ event_id: eventIdFromUrl })
           }
         );
 
         if (!res.ok) return;
 
-        // 若後端回傳 event_id 就用回傳的，否則用 URL 的
         const incomingEventId = json?.event_id ?? eventIdFromUrl;
         console.log('[availability] resolved event_id =', incomingEventId);
         setEventID(incomingEventId);
@@ -105,82 +110,126 @@ export default function Ticket() {
       }
     })();
   }, [concert, id, eventIdFromUrl]);
-async function lockSeat() {
-  const finalEventId = Number(eventID ?? eventIdFromUrl);
-  if (!selected || !finalEventId) {
-    alert('缺少座位或活動編號'); return;
-  }
-  const payload = {
-    event_id: finalEventId,
-    area: areaMap[selected.area] || selected.area, // 送中文區名
-    row: selected.row,
-    column: selected.col
-  };
 
-  // 送出前印出 payload
-  console.log('[lockSeat] payload =', payload);
-
-  const { res, json } = await logFetch(
-    'https://reactticketsystem-production.up.railway.app/ticket/lock',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(payload) // 鎖位用扁平
-    }
-  );
-
-  if (!res.ok || !json?.status) {
-    alert(json?.notify || `鎖位失敗（HTTP ${res.status}）`);
-    return;
-  }
-
-  // 鎖成功：可選擇在 UI 上先把該座位反灰（避免二次點擊）
-  setPurchased(prev => [...prev, [payload.area, payload.row, payload.column]]);
-
-  // 如果後端回傳 TTL（秒），可以顯示倒數
-  if (json.ttl) {
-    console.log(`[lock] seat locked for ${json.ttl}s`);
-    // 你也可以在 UI 放個倒數計時提示
-  }
-
-  // 進入驗證碼步驟
-  setShowConfirm(false);
-  setShowVerify(true);
-}
-
-  const handleSelect = (seat) => {
-    if (seat.disabled) return;
-    setSelected(seat);
-  };
-
-  const handleSubmit = () => {
-    if (!selected) return alert('請先選擇一個座位');
-    // 原本是 setShowConfirm(true)，改為直接鎖位或先顯示確認再鎖
-    setShowConfirm(true);
-  };
-
-  const confirmSubmit = async () => {
-    const finalEventId = Number(eventID ?? eventIdFromUrl);
-    if (!finalEventId) {
-      alert('尚未取得活動代號，請重新整理後再試');
-      console.error('[confirmSubmit] event_id 無效：', { eventID, eventIdFromUrl });
+  // 倒數計時：每秒 -1，為 0 時自動解除鎖
+  useEffect(() => {
+    if (lockCountdown == null) return;
+    if (lockCountdown <= 0) {
+      if (lockedByMe) {
+        alert('鎖位逾時，已釋放座位');
+        unlockSeat(); // 自動釋放
+      }
       return;
     }
+    const t = setInterval(() => setLockCountdown(v => (v ? v - 1 : v)), 1000);
+    return () => clearInterval(t);
+  }, [lockCountdown, lockedByMe]);
+
+  // 解除鎖（取消/逾時/錯誤時呼叫）
+  async function unlockSeat() {
+    try {
+      if (!lockedByMe) { cleanupLockUI(); return; }
+      const finalEventId = Number(eventID ?? eventIdFromUrl);
+      await logFetch('https://reactticketsystem-production.up.railway.app/ticket/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          event_id: finalEventId,
+          area: lockedByMe.area,
+          row: lockedByMe.row,
+          column: lockedByMe.column
+        })
+      });
+    } catch (e) {
+      console.warn('[unlockSeat] 解除鎖失敗（可忽略，TTL 會自動釋放）', e);
+    } finally {
+      cleanupLockUI();
+    }
+  }
+
+  function cleanupLockUI() {
+    setLockedByMe(null);
+    setLockCountdown(null);
+    setShowVerify(false);
+    setShowConfirm(false);
+  }
+
+  // 鎖位
+  async function lockSeat() {
+    const finalEventId = Number(eventID ?? eventIdFromUrl);
+    if (!selected || !finalEventId) {
+      alert('缺少座位或活動編號'); return;
+    }
+    if (isLocking) return;
+    setIsLocking(true);
 
     const payload = {
-      area: selected.area,
+      event_id: finalEventId,
+      area: selected.area, 
       row: selected.row,
-      column: selected.col,
-      totpcode_input: verifyCode,
-      event_id: finalEventId
+      column: selected.col
     };
-    //------
-    console.log("=== confirmSubmit payload keys & values ===");
-    Object.entries(payload).forEach(([key, value]) => {
-      console.log(`${key}:`, value);
-    });//----
+
+    console.log('[lockSeat] payload =', payload);
+
     try {
+      const { res, json } = await logFetch(
+        'https://reactticketsystem-production.up.railway.app/ticket/lock',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!res.ok || !json?.status) {
+        alert(json?.notify || `鎖位失敗（HTTP ${res.status}）`);
+        return;
+      }
+
+      // 設定本地鎖 & 倒數
+      const ttlSec = Number(json.ttl || 120);
+      setLockedByMe({ area: payload.area, row: payload.row, column: payload.column, expiresAt: Date.now() + ttlSec * 1000 });
+      setLockCountdown(ttlSec);
+
+      setShowConfirm(false);
+      setShowVerify(true);
+    } finally {
+      setIsLocking(false);
+    }
+  }
+
+  // 送出驗證（正式購票）
+  async function confirmSubmit() {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      const finalEventId = Number(eventID ?? eventIdFromUrl);
+
+      // 基本驗證
+      if (!selected) { alert('尚未選擇座位'); return; }
+      if (!Number.isFinite(finalEventId)) {
+        console.error('[confirmSubmit] 無效的 event_id:', { eventID, eventIdFromUrl });
+        alert('活動代號錯誤，請重新整理頁面'); return;
+      }
+      if (!/^\d{6}$/.test(verifyCode)) {
+        alert('請輸入 6 位數驗證碼'); return;
+      }
+
+      const payload = {
+        event_id: finalEventId,
+        area: selected.area, 
+        row: selected.row,
+        column: selected.col,
+        totpcode_input: verifyCode
+      };
+
+      console.log('=== [confirmSubmit] payload ===');
+      console.table(payload);
+
       const { res, json } = await logFetch(
         'https://reactticketsystem-production.up.railway.app/ticket',
         {
@@ -191,34 +240,71 @@ async function lockSeat() {
         }
       );
 
-      if (!res.ok) {
-        alert(`購票失敗（HTTP ${res.status}）`);
+      if (!res.ok || !json?.status) {
+        alert(json?.notify || `購票失敗（HTTP ${res.status}）`);
+        // 失敗可主動釋放鎖（若需要）
+        // await unlockSeat();
         return;
       }
 
-      if (json?.status) {
-        alert('購票成功');
-        setShowVerify(false);
-        setShowConfirm(false);
-        setPurchased(prev => [...prev, [payload.area, payload.row, payload.column]]);
-        setSelected(null);
-        setVerifyCode('');
-      } else {
-        alert(json?.notify || '購票失敗');
+      alert('購票成功');
+
+      // 成功後清理 UI 狀態
+      setShowVerify(false);
+      setShowConfirm(false);
+      setSelected(null);
+      setVerifyCode('');
+      setLockedByMe(null);
+      setLockCountdown(null);
+
+      // 重新抓一次 purchased，確保畫面同步
+      try {
+        const { res: r2, json: j2 } = await logFetch(
+          'https://reactticketsystem-production.up.railway.app/ticket/availability',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ event_id: finalEventId })
+          }
+        );
+        if (r2.ok && Array.isArray(j2?.purchased)) {
+          setPurchased(j2.purchased);
+        }
+      } catch (e2) {
+        console.warn('[confirmSubmit] 重新載入 purchased 失敗（忽略）', e2);
       }
+
     } catch (e) {
       console.error('購票發生錯誤', e);
       alert('購票失敗，請稍後再試');
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
 
   // 檢查是否已被購/鎖
-  const isDisabled = (areaKey, row, col) =>
-    purchased.some(([dbArea, dbRow, dbCol]) =>
-      dbArea === (areaMap[areaKey] || areaKey) &&
-      Number(dbRow) === Number(row) &&
-      Number(dbCol) === Number(col)
+  const isDisabled = (areaKey, row, col) => {
+    const displayArea = areaMap[areaKey] || areaKey;
+    const used = purchased.some(([dbArea, dbRow, dbCol]) =>
+      dbArea === displayArea && Number(dbRow) === Number(row) && Number(dbCol) === Number(col)
     );
+    const lockedMine = lockedByMe &&
+      lockedByMe.area === displayArea &&
+      Number(lockedByMe.row) === Number(row) &&
+      Number(lockedByMe.column) === Number(col);
+    return used || lockedMine;
+  };
+
+  const handleSelect = (seat) => {
+    if (seat.disabled) return;
+    setSelected(seat);
+  };
+
+  const handleSubmit = () => {
+    if (!selected) return alert('請先選擇一個座位');
+    setShowConfirm(true);
+  };
 
   const renderSection = ({ id: sectionId, rows, cols, className }) => (
     <div key={sectionId} className="flex flex-col gap-[2px]">
@@ -228,11 +314,7 @@ async function lockSeat() {
             const row = r + 1;
             const col = c + 1;
             const used = isDisabled(sectionId, row, col);
-            const sel =
-              selected &&
-              selected.area === sectionId &&
-              selected.row === row &&
-              selected.col === col;
+            const sel = selected && selected.area === sectionId && selected.row === row && selected.col === col;
             return (
               <button
                 key={c}
@@ -263,7 +345,6 @@ async function lockSeat() {
       </div>
     );
   }
-  
 
   return (
     <div className="mt-20 p-6 text-center">
@@ -277,7 +358,7 @@ async function lockSeat() {
       </div>
 
       {/* 中層：B A C 區 */}
-      <div className="flex justify-center gap-8 mb-2">
+      <div className="flex justify中心 gap-8 mb-2">
         {seatConfig.slice(3, 6).map(renderSection)}
       </div>
 
@@ -313,10 +394,11 @@ async function lockSeat() {
             </table>
             <div className="text-right">
               <button
-               onClick={lockSeat} 
+                onClick={lockSeat}
+                disabled={isLocking}
                 className="bg-green-600 text-white px-4 py-2 rounded mr-2"
               >
-                確定
+                {isLocking ? '鎖定中…' : '確定'}
               </button>
               <button
                 onClick={() => setShowConfirm(false)}
@@ -333,7 +415,9 @@ async function lockSeat() {
       {showVerify && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-center">
-            <p className="font-bold mb-2">請輸入驗證碼：</p>
+            <p className="font-bold mb-2">
+              請輸入驗證碼{lockCountdown != null && `（剩餘 ${lockCountdown}s）`}
+            </p>
             <input
               id="verifyCode"
               name="verifyCode"
@@ -345,15 +429,16 @@ async function lockSeat() {
               placeholder="6 位數"
               autoComplete="one-time-code"
             />
-            <div>
+            <div className="flex justify-center gap-2">
               <button
                 onClick={confirmSubmit}
-                className="bg-blue-600 text-white px-4 py-2 rounded mr-2"
+                disabled={!isCodeReady || isSubmitting}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
               >
-                送出
+                {isSubmitting ? '送出中…' : '送出'}
               </button>
               <button
-                onClick={() => setShowVerify(false)}
+                onClick={unlockSeat}
                 className="bg-gray-500 text-white px-4 py-2 rounded"
               >
                 取消
