@@ -1,3 +1,4 @@
+#判斷使用者登入狀態
 def CheckUserLogin(request):
     if "UserID" in request.session and "UserName" in request.session and "RegisterID" in request.session:
         return {"status":True,
