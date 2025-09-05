@@ -1,11 +1,11 @@
 from fastapi.encoders import jsonable_encoder
 
+#鎖票
 async def Lock(request,reqT,redisT):
     
     response = await reqT.GetJson(request = request)
     if response["status"]:
         try:
-            #registerID = request.session["RegisterID"]
             loginID = request.session["UserID"]
             
             data = response["data"]
@@ -24,7 +24,7 @@ async def Lock(request,reqT,redisT):
                     "notify":f"TicketModule_LockError ! message : [{type(e)} {e}]"}
     return response
 
-
+#購票
 async def GetTicketData(request,reqT,sqlT,totpT,redisT):
     
     response = await reqT.GetJson(request = request)
@@ -71,6 +71,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
                     "notify":f"TicketModule_GetTicketDataError ! message : [{type(e)} {e}]"}
     return response
 
+#限購機制
 async def CheckTicket(request,reqT,redisT):
     
     response = await reqT.GetJson(request = request)
@@ -79,7 +80,6 @@ async def CheckTicket(request,reqT,redisT):
         try:
             
             data = response["data"]
-            #registerID = request.session["RegisterID"]
             loginID = request.session["UserID"]
             userName = request.session["UserName"]
             event_id = data["event_id"]
@@ -92,11 +92,11 @@ async def CheckTicket(request,reqT,redisT):
                     "notify":f"TicketModule_CheckTicketError ! message : [{type(e)} {e}]"}
     return response
 
+#釋放票券
 async def CancelTicket(request,reqT,redisT):
     response = await reqT.GetJson(request = request)
     if response["status"]:
         try:
-            #registerID = request.session["RegisterID"]
             loginID = request.session["UserID"]
             data = response["data"]
             event_id = data["event_id"]
@@ -115,9 +115,9 @@ async def CancelTicket(request,reqT,redisT):
                     "notify":f"TicketModule_CancelTicketError ! message : [{type(e)} {e}]"}
     return response
 
+#重新載入購票視窗
 async def RestoreTicket(request,redisT):
     try:
-        #registerID = request.session["RegisterID"]
         loginID = request.session["UserID"]
         userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
         TicketRestore_result = redisT.TicketRestore(userSeatIndexKey=userSeatIndexKey,loginID=loginID)
@@ -126,6 +126,7 @@ async def RestoreTicket(request,redisT):
         return {"status":False,
                 "notify":f"TicketModule_RestoreTicketError ! message : [{type(e)} {e}]"}
 
+#取得活動鎖有購票紀錄
 async def CheckTicketPurchased(request, reqT, sqlT):
     response = await reqT.GetJson(request=request)
     if not response["status"]:
