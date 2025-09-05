@@ -4,6 +4,22 @@ async def Lock(request,reqT,redisT):
     
     response = await reqT.GetJson(request = request)
     if response["status"]:
+        #registerID = request.session["RegisterID"]
+        loginID = request.session["UserID"]
+            
+        data = response["data"]
+        return{"notify":data["event_id"]}
+        area = data["area"]
+        row = data["row"]
+        column = data["column"]
+        event_id = data["event_id"]
+            
+        seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
+        userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
+            
+        TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,loginID=loginID)
+        return TicketLock_result
+        """
         try:
             #registerID = request.session["RegisterID"]
             loginID = request.session["UserID"]
@@ -19,9 +35,11 @@ async def Lock(request,reqT,redisT):
             
             TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,loginID=loginID)
             return TicketLock_result
+        
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketModule_LockError ! message : [{type(e)} {e}]"}
+                    """
     return response
 
 
