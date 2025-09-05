@@ -53,7 +53,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
                 InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
                 if InsertTicketData_result["status"]:
                     
-                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,registerID=registerID)
+                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,loginID=loginID)
                     if not TicketSuccess_result["status"]:
                         return TicketSuccess_result
                     
