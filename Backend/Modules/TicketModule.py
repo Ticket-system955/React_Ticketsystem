@@ -29,7 +29,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
     
     
     response = await reqT.GetJson(request = request)
-    return{"notify":response}
+    return{"notify":str(response)}
     if response["status"]:
         
         try:
