@@ -34,9 +34,9 @@ async def Check(request,reqT,sqlT):
                 '''確認回傳資料，是否可以修改'''
                 return{"status":True,
                        "notify":"登入成功 !",
-                       "UserID":login_idInput,
-                       "UserName":userName,
-                       "RegisterID":registerID}
+                       "UserID":login_idInput,#***
+                       "UserName":userName,#***
+                       "RegisterID":registerID#***}
                 
             else:#否則輸入不正確
                 return{"status":False,
@@ -45,4 +45,4 @@ async def Check(request,reqT,sqlT):
         except Exception as e:#例外處理
             return {"status":False,
                     "notify":f"CheckError ! message : [{type(e)} | {e}]"}
-    return response#否則前端資料取得失敗
+    return response#否則前端資料取得失敗(GetJsonError)
