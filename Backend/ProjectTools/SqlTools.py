@@ -1,6 +1,7 @@
 import pymysql
 from urllib.parse import urlparse
 
+#建立連線
 class SqlBase:
     def __init__(self,url):
         self.url = urlparse(url)
@@ -44,7 +45,8 @@ class SqlBase:
         return ticket
 
 
-
+#功能
+#繼承父類別
 class SqlTools(SqlBase):
     
     def __init__(self,URL):
@@ -52,6 +54,7 @@ class SqlTools(SqlBase):
         
 #ProfileModule
 #------------------------------------------------------------------------------------
+    #取得使用者資料
     def GetProfileData(self,profileColumn,loginID):
         try:
             INSTRUCTION=f"""SELECT {",".join(profileColumn)}
@@ -66,7 +69,7 @@ class SqlTools(SqlBase):
             return {"status":False,
                     "notify":f"GetProfileDataError ! message : [{type(e)} | {e}]"}
             
-    
+    #取得購票紀錄
     def GetTicketData(self,registerID,ticketColumn):
         try:
             INSTRUCTION=f"""SELECT {",".join(ticketColumn)} 
@@ -87,6 +90,7 @@ class SqlTools(SqlBase):
 
 #LoginModule
 #------------------------------------------------------------------------------------
+    #取得帳號、密碼
     def GetUserData(self,loginIDInput,passwordInput):
         try:
             INSTRUCTION="""SELECT login_id,password FROM register
@@ -100,7 +104,7 @@ class SqlTools(SqlBase):
             return {"status":False,
                     "notify":f"GetUserDataError ! message : [{type(e)} | {e}]"}
         
-    
+    #取得姓名
     def GetUserName(self,loginIDInput,passwordInput):
         try:
             INSTRUCTION="""SELECT name FROM register 
@@ -112,7 +116,8 @@ class SqlTools(SqlBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"GetUserNameError ! message : [{type(e)} | {e}]"}
-        
+
+    #取得註冊編號
     def GetRegisterID(self,loginIDInput,passwordInput):
         try:
             INSTRUCTION="""SELECT id FROM register 
@@ -129,6 +134,7 @@ class SqlTools(SqlBase):
 
 #RegisterModule
 #------------------------------------------------------------------------------------
+    #存入註冊資料
     def InsertRegisterData(self,loginID,password,name,gender,birthday,
                            email,phone_number,mobile_number,address,secret):
         try:
@@ -148,6 +154,7 @@ class SqlTools(SqlBase):
 
 #TicketModule
 #------------------------------------------------------------------------------------
+    #取得密鑰
     def GetSecret(self,loginID):
         try:
             INSTRUCTION = """SELECT secret
@@ -162,7 +169,8 @@ class SqlTools(SqlBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"GetSecretError ! message : [{type(e)} | {e}]"}
-    
+
+    #存入票券資料
     def InsertTicketData(self,registerID,event_id,area,row,column):
         try:
             INSTRUCTION = """INSERT INTO ticket(register_id,event_id,area,`row`,`column`)
@@ -175,7 +183,8 @@ class SqlTools(SqlBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"InsertTicketDataError ! message : [{type(e)} | {e}]"}
-        
+
+    #取得活動編號
     def GetEventID(self,title):
         try:
             INSTRUCTION = """SELECT id FROM event 
@@ -189,7 +198,8 @@ class SqlTools(SqlBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"GetEventIDError ! message : [{type(e)} | {e}]"}
-    
+
+    #取得活動的所有購票紀錄
     def GetPurchasedData(self,event_id):
         try:
             INSTRUCTION = """SELECT area,`row`,`column` FROM `event` 
