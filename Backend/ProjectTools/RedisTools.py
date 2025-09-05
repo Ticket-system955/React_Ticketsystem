@@ -54,9 +54,10 @@ class RedisTools(RedisBase):
             self.r.lpush(event_id,loginID)
             deleteSeatLockKey = self.r.delete(seatLockKey)
             deleteUserSeatIndexKey = self.r.delete(userSeatIndexKey)
+            
             if not (deleteSeatLockKey and deleteUserSeatIndexKey):
                 return {"status":False,
-                        "notify":"鎖票鍵移除時出現問題，請檢查鎖票序列 !"}
+                        "notify":f"{seatLockKey},{userSeatIndexKey}"}
             return {"status":True,
                     "notify":f"loginID : {loginID} 已 push 至 Redis 序列 !"}
         except Exception as e:
