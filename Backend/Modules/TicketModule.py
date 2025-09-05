@@ -29,6 +29,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
     
     
     response = await reqT.GetJson(request = request)
+    return{"notify":str(response)}
     if response["status"]:
         
         try:
@@ -36,6 +37,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             loginID = request.session["UserID"]
             
             data = response["data"]
+
             event_id = data["event_id"]
             area = data["area"]
             row = data["row"]
