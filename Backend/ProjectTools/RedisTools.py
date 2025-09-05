@@ -1,6 +1,12 @@
 import redis
 from urllib.parse import urlparse
 
+'''
+父類別
+存放:
+    1.連線資料
+    2.子類別需要的額外函式
+'''
 class RedisBase:
     def __init__(self,url):
             self.url = urlparse(url)
@@ -13,7 +19,12 @@ class RedisBase:
         return key
             
     
-
+'''
+子類別
+存放:
+    1.各模組需要的功能
+    2.簡易例外處理
+'''
 class RedisTools(RedisBase):
     def __init__(self,URL):
         super().__init__(URL)
@@ -35,7 +46,10 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketLockError ! message : {type(e)} {e}"}
-        
+
+    '''
+
+    '''
     def TicketSuccess(self,event_id,loginID,seatLockKey,userSeatIndexKey):
         try:
             self.r.lpush(event_id,loginID)
@@ -50,7 +64,10 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-    
+
+    '''
+
+    '''
     def TicketCheck(self,event_id,loginID,userName):
         try:
             if loginID in self.r.lrange(event_id,0,-1):
@@ -60,7 +77,10 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-            
+
+    '''
+
+    '''
     def TicketCancel(self,seatLockKey,userSeatIndexKey):
         try:
             deleteSeatLockKey = self.r.delete(seatLockKey)
@@ -78,7 +98,10 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketCancelError ! message : {type(e)} {e}"}
-        
+
+    '''
+
+    '''
     def TicketRestore(self,userSeatIndexKey,loginID):
         try:
             seatLockKey = self.r.get(userSeatIndexKey)
