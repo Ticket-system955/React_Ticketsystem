@@ -1,3 +1,4 @@
+#驗證登入
 async def Check(request,reqT,sqlT):
     response = await reqT.GetJson(request=request)
     
