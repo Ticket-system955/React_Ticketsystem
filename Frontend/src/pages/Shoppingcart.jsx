@@ -12,7 +12,7 @@ export default function ShoppingCart() {
     if (stored) {
       setCartItems(JSON.parse(stored));
     }
-    fetch('https://reactticketsystem-production.up.railway.app/check_login', {
+    fetch('https://reactticketsystem-production.up.railway.app/auth/login/check', {
       credentials: 'include',
     })
       .then(res => res.json())
