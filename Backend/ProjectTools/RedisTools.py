@@ -37,9 +37,15 @@ class RedisTools(RedisBase):
                     "notify":f"TicketLockError ! message : {type(e)} {e}"}
         
     
-    def TicketSuccess(self,event_id,loginID):
+    def TicketSuccess(self,event_id,loginID,seatLockKey,userSeatIndexKey):
         try:
             self.r.lpush(event_id,loginID)
+            deleteSeatLockKey = self.r.delete(seatLockKey)
+            deleteUserSeatIndexKey = self.r.delete(userSeatIndexKey)
+            if not (deleteSeatLockKey and deleteUserSeatIndexKey):
+                return {"status":False,
+                        "notify":"鎖票鍵移除時出現問題，請檢查鎖票序列 !"}
+            
             return {"status":True,
                     "notify":f"loginID : {loginID} 已 push 至 Redis 序列 !"}
         except Exception as e:
