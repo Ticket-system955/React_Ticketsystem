@@ -85,10 +85,7 @@ export default function Ticket() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',   // 需要 session
             body: JSON.stringify({
-              data: {
-                event_id: eventIdFromUrl  // ✅ 以 event_id 為主
-                // 若後端仍需 title/location 再加上：title, location
-              }
+                event_id: eventIdFromUrl  
             })
           }
         );
@@ -143,7 +140,7 @@ export default function Ticket() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ data: payload }) // 若後端不要 data wrapper，就改成 body: JSON.stringify(payload)
+          body: JSON.stringify({ event_id: eventIdFromUrl })
         }
       );
 
