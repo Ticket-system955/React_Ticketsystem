@@ -24,36 +24,34 @@ const seatConfig = [
 ];
 
 export default function Ticket() {
-  const { id } = useParams();
+  const { id } = useParams();                     
   const concert = concertsData.find(c => String(c.id) === String(id));
-
-  // ✅ 單一真實來源：用路由參數轉數字，整支檔案統一用它當 event_id
-  const eventId = Number(id);
 
   const [selected, setSelected] = useState(null);
   const [eventTitle, setEventTitle] = useState('');
   const [eventlocation, setEventLocation] = useState('');
-  const [eventID, setEventID] = useState(null);   // 後端若回傳 event_id 就存這裡
-  const [purchased, setPurchased] = useState([]);
+  const [eventID, setEventID] = useState(null);   
+  const [purchased, setPurchased] = useState([]); 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showVerify, setShowVerify] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
 
   useEffect(() => {
-    if (!concert) return;
+    if (!concert) return; // 找不到演唱會，直接跳出
 
-    setEventTitle(concert.title);
-    setEventLocation(concert.location);
+  setEventTitle(concert.title);
+  setEventLocation(concert.location);
+  const eventId = Number(id); // 送後端用數字 id
 
     const fetchSeats = async () => {
       try {
         const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket/availability', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+          credentials: 'include',   // 需要 session
           body: JSON.stringify({
             data: {
-              event_id: eventId, // ✅ 傳數字，不要傳物件
+              event_id: concert,                         
             }
           })
         });
@@ -63,9 +61,9 @@ export default function Ticket() {
           console.error('Availability Error:', res.status, txt);
           return;
         }
-
         const json = await res.json();
-        setEventID(Number(json.event_id ?? eventId));      // ✅ 確保是數字
+        // 若後端會回傳 event_id，存起來；否則用 URL 的 eventId
+        setEventID(json.event_id ?? eventIdFromUrl);
         setPurchased(Array.isArray(json.purchased) ? json.purchased : []);
       } catch (err) {
         console.error('Fetch availability failed', err);
@@ -73,7 +71,7 @@ export default function Ticket() {
     };
 
     fetchSeats();
-  }, [concert, eventId]); // ✅ eventId 已定義
+  }, [concert, eventIdFromUrl]);
 
   const handleSelect = (seat) => {
     if (seat.disabled) return;
@@ -86,15 +84,14 @@ export default function Ticket() {
   };
 
   const confirmSubmit = async () => {
-    const finalEventId = Number(eventID ?? eventId); // ✅ 以後端回傳為主，否則用路由 id
-    if (!finalEventId || Number.isNaN(finalEventId)) {
+    const finalEventId = Number(eventID ?? eventIdFromUrl);
+    if (!finalEventId) {
       alert('尚未取得活動代號，請重新整理後再試');
       return;
     }
 
     const payload = {
-      // ✅ 後端建議用英文 key；顯示再用 areaMap 轉中文
-      area: selected.area,
+      area: areaMap[selected.area] || selected.area,
       row: selected.row,
       column: selected.col,
       totpcode_input: verifyCode,
@@ -105,7 +102,7 @@ export default function Ticket() {
       const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'include', 
         body: JSON.stringify({ data: payload })
       });
       const data = await res.json();
@@ -114,7 +111,7 @@ export default function Ticket() {
         alert('購票成功');
         setShowVerify(false);
         setShowConfirm(false);
-        // 樂觀更新，避免重複選
+        // 成功後也可把該座位加到 purchased，避免再被選
         setPurchased(prev => [...prev, [payload.area, payload.row, payload.column]]);
         setSelected(null);
         setVerifyCode('');
@@ -127,10 +124,10 @@ export default function Ticket() {
     }
   };
 
-  // ❗ 如果後端的 purchased 用中文儲存，就把 dbArea 先轉回英文比對
+  // 檢查是否已被購/鎖
   const isDisabled = (areaKey, row, col) =>
     purchased.some(([dbArea, dbRow, dbCol]) =>
-      (dbArea === areaKey || areaMap[areaKey] === dbArea) && // 同時相容英文/中文
+      dbArea === (areaMap[areaKey] || areaKey) &&
       Number(dbRow) === Number(row) &&
       Number(dbCol) === Number(col)
     );
@@ -191,7 +188,7 @@ export default function Ticket() {
       </div>
 
       {/* 中層：B A C 區 */}
-      <div className="flex justify中心 gap-8 mb-2">
+      <div className="flex justify-center gap-8 mb-2">
         {seatConfig.slice(3, 6).map(renderSection)}
       </div>
 
@@ -215,7 +212,7 @@ export default function Ticket() {
 
       {/* 確認 Dialog */}
       {showConfirm && selected && (
-        <div className="fixed inset-0 flex items-center justify-center bg黑/50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-left">
             <p className="font-bold mb-4">請確認您的訂票內容：</p>
             <table className="mb-4">
@@ -245,7 +242,7 @@ export default function Ticket() {
 
       {/* 驗證碼 Dialog */}
       {showVerify && (
-        <div className="fixed inset-0 flex items-center justify-center bg黑/50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded shadow text-center">
             <p className="font-bold mb-2">請輸入驗證碼：</p>
             <input
