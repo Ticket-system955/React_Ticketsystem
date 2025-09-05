@@ -229,8 +229,10 @@ export default function Ticket() {
 
       console.log('=== [confirmSubmit] payload ===');
       console.table(payload);
-
-      const { res, json } = await logFetch(
+      Object.entries(payload).forEach(([key, value]) => {
+        console.log(`${key}: ${value}`);
+      });  
+    const { res, json } = await logFetch(
         'https://reactticketsystem-production.up.railway.app/ticket',
         {
           method: 'POST',
