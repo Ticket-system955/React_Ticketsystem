@@ -1,3 +1,4 @@
+#登出
 async def Logout(request):
     for key in ["UserName", "UserID", "RegisterID"]:
         request.session.pop(key, None)
