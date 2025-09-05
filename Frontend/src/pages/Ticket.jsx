@@ -130,7 +130,7 @@ export default function Ticket() {
     try {
       if (!lockedByMe) { cleanupLockUI(); return; }
       const finalEventId = Number(eventID ?? eventIdFromUrl);
-      await logFetch('https://reactticketsystem-production.up.railway.app/ticket/unlock', {
+      await logFetch('https://reactticketsystem-production.up.railway.app/ticket/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -358,7 +358,7 @@ export default function Ticket() {
       </div>
 
       {/* 中層：B A C 區 */}
-      <div className="flex justify中心 gap-8 mb-2">
+      <div className="flex justify-center gap-8 mb-2">
         {seatConfig.slice(3, 6).map(renderSection)}
       </div>
 
