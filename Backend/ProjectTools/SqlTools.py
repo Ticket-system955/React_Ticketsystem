@@ -59,7 +59,16 @@ class SqlTools(SqlBase):
         
 #ProfileModule
 #------------------------------------------------------------------------------------
-    '''取得使用者的註冊資料'''
+    '''
+    1.使用時機:LoginModule.Check要取得使用者註冊的資料時
+    2.功能:回傳使用者資料
+    3.說明:若取得成功
+           則回傳->{"status":True,
+                   "profileData":profileData}
+           例外處理
+             回傳->{"status":False,
+                    "notify":f"GetProfileDataError !"}
+    '''
     def GetProfileData(self,profileColumn,loginID):
         try:
             INSTRUCTION=f"""SELECT {",".join(profileColumn)}
@@ -96,7 +105,16 @@ class SqlTools(SqlBase):
 
 #LoginModule
 #------------------------------------------------------------------------------------
-    '''取得使用者的登入資料(密碼、帳號)'''
+    '''
+    1.使用時機:LoginModule.Check()內，欲取得使用者帳號、密碼時
+    2.功能:回傳使用者帳號、密碼
+    3.說明:若取得成功
+           則回傳->{"status":True,
+                    "userData":userData}
+           例外處理
+             回傳->{"status":False,
+                    "notify":f"GetUserDataError !"}
+    '''
     def GetUserData(self,loginIDInput,passwordInput):
         try:
             INSTRUCTION="""SELECT login_id,password FROM register
@@ -111,7 +129,16 @@ class SqlTools(SqlBase):
                     "notify":f"GetUserDataError ! message : [{type(e)} | {e}]"}
 
     
-    '''取得使用者的登入資料(姓名)'''
+    '''
+    1.使用時機:LoginModule.Check()內，欲取得使用者真實姓名時
+    2.功能:回傳使用者真實姓名
+    3.說明:若取得成功
+           則回傳->{"status":True,
+                    "userName":userName}
+           例外處理
+             回傳->{"status":False,
+                    "notify":f"GetUserNameError !"}
+    '''
     def GetUserName(self,loginIDInput,passwordInput):
         try:
             INSTRUCTION="""SELECT name FROM register 
@@ -125,7 +152,16 @@ class SqlTools(SqlBase):
                     "notify":f"GetUserNameError ! message : [{type(e)} | {e}]"}
 
     
-    '''取得使用者註冊成功後，紀錄在register資料表中的編號'''
+    '''
+    1.使用時機:LoginModule.Check()內，欲取得使用者的註冊編號時
+    2.功能:回傳使用者的註冊編號
+    3.說明:若取得成功
+           則回傳->{"status":True,
+                    "registerID":registerID}
+           例外處理
+             回傳->{"status":False,
+                    "notify":f"GetUserIDError !"}
+    '''
     def GetRegisterID(self,loginIDInput,passwordInput):
         try:
             INSTRUCTION="""SELECT id FROM register 
