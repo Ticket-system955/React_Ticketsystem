@@ -14,4 +14,4 @@ class RequestTools:
             data = await request.json()
             return {"status":True,"notify":"前端資料取得成功 !","data":data}
         except Exception as e:
-            return {"status":False,"notify":f"GetJsonError ! message : [{type(e)} | {e}]}
+            return {"status":False,"notify":f"RequestTools.GetJsonError ! message : [{type(e)} | {e}]}
