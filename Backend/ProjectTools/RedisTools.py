@@ -17,18 +17,18 @@ class RedisBase:
 class RedisTools(RedisBase):
     def __init__(self,URL):
         super().__init__(URL)
-    def TicketLock(self,seatLockKey,userSeatIndexKey,registerID):
+    def TicketLock(self,seatLockKey,userSeatIndexKey,loginID):
         try:
             lock = self.r.get(seatLockKey)
             if not lock:
                 if not self.r.set(userSeatIndexKey, seatLockKey, nx=True, ex=60):
                     return {"status":False,
                             "notify":"不可多選 !"}
-                self.r.set(seatLockKey, registerID , nx=True, ex=60)
+                self.r.set(seatLockKey, loginID , nx=True, ex=60)
                 return {"status":True,
                         "time":self.r.pttl(seatLockKey)/1000}
             
-            if lock==str(registerID):
+            if lock==loginID:
                 return {"status":True,
                         "time":self.r.pttl(seatLockKey)/1000}#
             return {"status":False,"notify":"此位置已經被選取，請稍後再試 !"}
@@ -37,18 +37,18 @@ class RedisTools(RedisBase):
                     "notify":f"TicketLockError ! message : {type(e)} {e}"}
         
     
-    def TicketSuccess(self,event_id,registerID):
+    def TicketSuccess(self,event_id,loginID):
         try:
-            self.r.lpush(event_id,registerID)
+            self.r.lpush(event_id,loginID)
             return {"status":True,
-                    "notify":f"RegisterID : {registerID} 已 push 至 Redis 序列 !"}
+                    "notify":f"loginID : {loginID} 已 push 至 Redis 序列 !"}
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
     
-    def TicketCheck(self,event_id,registerID,userName):
+    def TicketCheck(self,event_id,loginID,userName):
         try:
-            if str(registerID) in self.r.lrange(event_id,0,-1):
+            if loginID in self.r.lrange(event_id,0,-1):
                 return {"status":False,
                         "notify":f"{userName}您好，每人限購一張，不可重複購票 !"}
             return {"status":True}
@@ -75,7 +75,7 @@ class RedisTools(RedisBase):
                     "notify":f"TicketCancelError ! message : {type(e)} {e}"}
         
     
-    def TicketRestore(self,userSeatIndexKey,registerID):
+    def TicketRestore(self,userSeatIndexKey,loginID):
         try:
             seatLockKey = self.r.get(userSeatIndexKey)
             if not seatLockKey:
@@ -85,7 +85,7 @@ class RedisTools(RedisBase):
             if not lock:
                 return {"status":False,"notify":"沒有選位資料 !"}
             
-            if lock==str(registerID):
+            if lock==loginID:
                 seat = self.ParseSeatLockKey(seatLockKey)
                 return {"status":True,
                         "seat":seat,
