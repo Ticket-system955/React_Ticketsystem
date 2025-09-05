@@ -28,7 +28,7 @@ export default function Profile() {
   if (!user) return <div className="p-8">載入中...</div>
 
   return (
-    <div className="max-w-3xl mx-auto mt-8 bg-white shadow rounded-lg p-6">
+    <div className="mt-20 max-w-3xl mx-auto mt-8 bg-white shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
         <span>👤</span> 會員中心
       </h2>
@@ -37,6 +37,7 @@ export default function Profile() {
       <table className="w-full border">
         <tbody>
           <tr><td className="border px-4 py-2">帳號/身分證</td><td className="border px-4 py-2">{user.login_id}</td></tr>
+          <tr><td className="border px-4 py-2">密碼</td><td className="border px-4 py-2">{user.password}</td></tr>
           <tr><td className="border px-4 py-2">姓名</td><td className="border px-4 py-2">{user.name}</td></tr>
           <tr><td className="border px-4 py-2">性別</td><td className="border px-4 py-2">{user.gender}</td></tr>
           <tr><td className="border px-4 py-2">生日</td><td className="border px-4 py-2">{user.birthday}</td></tr>
