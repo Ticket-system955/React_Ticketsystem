@@ -12,7 +12,7 @@ async def ShowQRcode(request,reqT,totpT):
         except Exception as e:
             return {"status":False,
                     "notify":f"ShowQRcodeError ! message : [{type(e)} {e}]"}
-    return {"status":False}
+    return response
     
 async def CheckANDRegister(request,reqT,sqlT,totpT):
     response = await reqT.GetJson(request=request)
