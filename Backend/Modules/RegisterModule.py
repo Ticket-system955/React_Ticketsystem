@@ -1,3 +1,4 @@
+#顯示QRcode
 async def ShowQRcode(request,reqT,totpT):
     response = await reqT.GetJson(request=request)
     if response["status"]:
@@ -13,7 +14,8 @@ async def ShowQRcode(request,reqT,totpT):
             return {"status":False,
                     "notify":f"ShowQRcodeError ! message : [{type(e)} {e}]"}
     return {"status":False}
-    
+
+#註冊及驗證碼正確性
 async def CheckANDRegister(request,reqT,sqlT,totpT):
     response = await reqT.GetJson(request=request)
     if response["status"]:
