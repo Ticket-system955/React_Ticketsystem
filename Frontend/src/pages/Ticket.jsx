@@ -105,6 +105,49 @@ export default function Ticket() {
       }
     })();
   }, [concert, id, eventIdFromUrl]);
+async function lockSeat() {
+  const finalEventId = Number(eventID ?? eventIdFromUrl);
+  if (!selected || !finalEventId) {
+    alert('缺少座位或活動編號'); return;
+  }
+  const payload = {
+    event_id: finalEventId,
+    area: areaMap[selected.area] || selected.area, // 送中文區名
+    row: selected.row,
+    column: selected.col
+  };
+
+  // 送出前印出 payload
+  console.log('[lockSeat] payload =', payload);
+
+  const { res, json } = await logFetch(
+    'https://reactticketsystem-production.up.railway.app/ticket/lock',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload) // 鎖位用扁平
+    }
+  );
+
+  if (!res.ok || !json?.status) {
+    alert(json?.notify || `鎖位失敗（HTTP ${res.status}）`);
+    return;
+  }
+
+  // 鎖成功：可選擇在 UI 上先把該座位反灰（避免二次點擊）
+  setPurchased(prev => [...prev, [payload.area, payload.row, payload.column]]);
+
+  // 如果後端回傳 TTL（秒），可以顯示倒數
+  if (json.ttl) {
+    console.log(`[lock] seat locked for ${json.ttl}s`);
+    // 你也可以在 UI 放個倒數計時提示
+  }
+
+  // 進入驗證碼步驟
+  setShowConfirm(false);
+  setShowVerify(true);
+}
 
   const handleSelect = (seat) => {
     if (seat.disabled) return;
@@ -113,6 +156,7 @@ export default function Ticket() {
 
   const handleSubmit = () => {
     if (!selected) return alert('請先選擇一個座位');
+    // 原本是 setShowConfirm(true)，改為直接鎖位或先顯示確認再鎖
     setShowConfirm(true);
   };
 
@@ -125,7 +169,7 @@ export default function Ticket() {
     }
 
     const payload = {
-      area: areaMap[selected.area] || selected.area,
+      area: selected.area,
       row: selected.row,
       column: selected.col,
       totpcode_input: verifyCode,
@@ -219,6 +263,7 @@ export default function Ticket() {
       </div>
     );
   }
+  
 
   return (
     <div className="mt-20 p-6 text-center">
@@ -268,7 +313,7 @@ export default function Ticket() {
             </table>
             <div className="text-right">
               <button
-                onClick={() => { setShowConfirm(false); setShowVerify(true); }}
+               onClick={lockSeat} 
                 className="bg-green-600 text-white px-4 py-2 rounded mr-2"
               >
                 確定
