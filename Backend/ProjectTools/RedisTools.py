@@ -57,7 +57,7 @@ class RedisTools(RedisBase):
             
             if not (deleteSeatLockKey and deleteUserSeatIndexKey):
                 return {"status":False,
-                        "notify":f"{deleteSeatLockKey},{deleteUserSeatIndexKey}"}
+                        "notify":f"{seatLockKey},{userSeatIndexKey}"}
             return {"status":True,
                     "notify":f"loginID : {loginID} 已 push 至 Redis 序列 !"}
         except Exception as e:
