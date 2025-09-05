@@ -23,9 +23,36 @@ const seatConfig = [
   { id: 'd-area', rows: 10, cols: 20, className: 'bg-purple-300' }
 ];
 
+// 小工具：把 fetch 的請求與回應完整印出
+async function logFetch(url, options) {
+  console.groupCollapsed(`[fetch] ${options?.method || 'GET'} ${url}`);
+  if (options?.body) {
+    try { console.log('Request JSON:', JSON.parse(options.body)); }
+    catch { console.log('Request body (raw):', options.body); }
+  } else {
+    console.log('Request: (no body)');
+  }
+  try {
+    const res = await fetch(url, options);
+    const raw = await res.clone().text(); // 先抓 raw，避免 JSON parse 失敗沒線索
+    console.log('Status:', res.status);
+    console.log('Headers:', Object.fromEntries(res.headers.entries()));
+    console.log('Raw response:', raw);
+    let json = null;
+    try { json = JSON.parse(raw); } catch {}
+    if (json) console.log('Parsed JSON:', json);
+    console.groupEnd();
+    return { res, raw, json };
+  } catch (err) {
+    console.error('[fetch error]', err);
+    console.groupEnd();
+    throw err;
+  }
+}
+
 export default function Ticket() {
   const { id } = useParams();                     
-  const eventIdFromUrl = Number(concertsData.id);              
+  const eventIdFromUrl = Number(id);              // ✅ 修正：用 URL 參數，不要用 concertsData.id（陣列）
   const concert = concertsData.find(c => String(c.id) === String(id));
 
   const [selected, setSelected] = useState(null);
@@ -39,41 +66,48 @@ export default function Ticket() {
 
   // 頁面初始化：抓活動資料 & 已售/已鎖座位
   useEffect(() => {
-    if (!concert) return; // 找不到演唱會，直接跳出
+    if (!concert) {
+      console.warn('[Ticket] 找不到演唱會資料，id =', id);
+      return;
+    }
 
-    const title = concert.name;
-    const location = concert.location;
+    const title = concert.name ?? concert.title ?? `活動 #${eventIdFromUrl}`;
+    const location = concert.location ?? '';
     setEventTitle(title);
     setEventLocation(location);
-    const fetchSeats = async () => {
-      try {
-        const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket/availability', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',   // 需要 session
-          body: JSON.stringify({
-            data: {
-              event_id: eventIdFromUrl, // ✅ 建議以 event_id 為主
-            }
-          })
-        });
 
-        if (!res.ok) {
-          const txt = await res.text();
-          console.error('Availability Error:', res.status, txt);
-          return;
-        }
-        const json = await res.json();
-        // 若後端會回傳 event_id，存起來；否則用 URL 的 eventId
-        setEventID(json.event_id ?? eventIdFromUrl);
-        setPurchased(Array.isArray(json.purchased) ? json.purchased : []);
+    (async () => {
+      try {
+        const { res, json } = await logFetch(
+          'https://reactticketsystem-production.up.railway.app/ticket/availability',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',   // 需要 session
+            body: JSON.stringify({
+              data: {
+                event_id: eventIdFromUrl  // ✅ 以 event_id 為主
+                // 若後端仍需 title/location 再加上：title, location
+              }
+            })
+          }
+        );
+
+        if (!res.ok) return;
+
+        // 若後端回傳 event_id 就用回傳的，否則用 URL 的
+        const incomingEventId = json?.event_id ?? eventIdFromUrl;
+        console.log('[availability] resolved event_id =', incomingEventId);
+        setEventID(incomingEventId);
+
+        const purchasedList = Array.isArray(json?.purchased) ? json.purchased : [];
+        console.log('[availability] purchased seats =', purchasedList);
+        setPurchased(purchasedList);
       } catch (err) {
         console.error('Fetch availability failed', err);
       }
-    };
-
-    fetchSeats();
-  }, [concert, eventIdFromUrl]);
+    })();
+  }, [concert, id, eventIdFromUrl]);
 
   const handleSelect = (seat) => {
     if (seat.disabled) return;
@@ -89,6 +123,7 @@ export default function Ticket() {
     const finalEventId = Number(eventID ?? eventIdFromUrl);
     if (!finalEventId) {
       alert('尚未取得活動代號，請重新整理後再試');
+      console.error('[confirmSubmit] event_id 無效：', { eventID, eventIdFromUrl });
       return;
     }
 
@@ -99,26 +134,33 @@ export default function Ticket() {
       totpcode_input: verifyCode,
       event_id: finalEventId
     };
+    console.log('[confirmSubmit] payload =', payload);
 
     try {
-      const res = await fetch('https://reactticketsystem-production.up.railway.app/ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // ✅ 送購票也要帶 session
-        body: JSON.stringify({ data: payload })
-      });
-      const data = await res.json();
+      const { res, json } = await logFetch(
+        'https://reactticketsystem-production.up.railway.app/ticket',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ data: payload }) // 若後端不要 data wrapper，就改成 body: JSON.stringify(payload)
+        }
+      );
 
-      if (data.status) {
+      if (!res.ok) {
+        alert(`購票失敗（HTTP ${res.status}）`);
+        return;
+      }
+
+      if (json?.status) {
         alert('購票成功');
         setShowVerify(false);
         setShowConfirm(false);
-        // 成功後也可把該座位加到 purchased，避免再被選
         setPurchased(prev => [...prev, [payload.area, payload.row, payload.column]]);
         setSelected(null);
         setVerifyCode('');
       } else {
-        alert(data.notify || '購票失敗');
+        alert(json?.notify || '購票失敗');
       }
     } catch (e) {
       console.error('購票發生錯誤', e);
@@ -180,8 +222,8 @@ export default function Ticket() {
 
   return (
     <div className="mt-20 p-6 text-center">
-      <h1 className="text-3xl font-bold mb-4">{eventTitle}</h1>
-      <h3 className="text-3xl font-bold mb-4">{eventLocation}場</h3>
+      <h1 className="text-3xl font-bold mb-1">{eventTitle}</h1>
+      <h3 className="text-base mb-4 opacity-70">{eventLocation && `${eventLocation} 場`}</h3>
       <div className="bg-black text-white w-[760px] mx-auto py-2 font-bold mb-6">-----------------</div>
 
       {/* 上層：搖滾區 */}
@@ -248,12 +290,15 @@ export default function Ticket() {
           <div className="bg-white p-6 rounded shadow text-center">
             <p className="font-bold mb-2">請輸入驗證碼：</p>
             <input
+              id="verifyCode"
+              name="verifyCode"
               type="text"
               value={verifyCode}
               onChange={e => setVerifyCode(e.target.value)}
               className="border p-2 rounded w-48 mb-4"
               inputMode="numeric"
               placeholder="6 位數"
+              autoComplete="one-time-code"
             />
             <div>
               <button
