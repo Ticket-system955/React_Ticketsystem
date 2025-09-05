@@ -1,4 +1,6 @@
 from fastapi.encoders import jsonable_encoder
+
+#取得使用者資料
 def GetProfileData(request,sqlT):
     try:
         loginID = request.session["UserID"]
