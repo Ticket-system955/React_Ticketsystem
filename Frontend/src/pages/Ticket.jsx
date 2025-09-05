@@ -131,7 +131,8 @@ export default function Ticket() {
       totpcode_input: verifyCode,
       event_id: finalEventId
     };
-    console.log('[confirmSubmit] payload =', payload);
+      console.log("=== 購票送出 payload ===");
+      console.table(payload); // 會用表格格式顯示每個欄位
 
     try {
       const { res, json } = await logFetch(
@@ -143,6 +144,7 @@ export default function Ticket() {
           body: JSON.stringify({ event_id: eventIdFromUrl })
         }
       );
+      console.log("=== 後端回應 ===", json);
 
       if (!res.ok) {
         alert(`購票失敗（HTTP ${res.status}）`);
