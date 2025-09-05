@@ -1,6 +1,6 @@
 import redis
 from urllib.parse import urlparse
-
+#建立連線
 class RedisBase:
     def __init__(self,url):
             self.url = urlparse(url)
@@ -13,10 +13,13 @@ class RedisBase:
         return key
             
     
-
+#功能
+#繼承父類別
 class RedisTools(RedisBase):
     def __init__(self,URL):
         super().__init__(URL)
+
+    #鎖票機制
     def TicketLock(self,seatLockKey,userSeatIndexKey,loginID):
         try:
             lock = self.r.get(seatLockKey)
@@ -36,7 +39,9 @@ class RedisTools(RedisBase):
             return {"status":False,
                     "notify":f"TicketLockError ! message : {type(e)} {e}"}
         
-    
+    #購票成功
+    #解除鎖票
+    #使用者id放入序列
     def TicketSuccess(self,event_id,loginID,seatLockKey,userSeatIndexKey):
         try:
             self.r.lpush(event_id,loginID)
@@ -51,7 +56,9 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-    
+
+    #限購機制
+    #每個活動限購一張
     def TicketCheck(self,event_id,loginID,userName):
         try:
             if loginID in self.r.lrange(event_id,0,-1):
@@ -61,7 +68,9 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-    
+
+    #釋放票券
+    #手動解除鎖票
     def TicketCancel(self,seatLockKey,userSeatIndexKey):
         try:
             deleteSeatLockKey = self.r.delete(seatLockKey)
@@ -80,7 +89,7 @@ class RedisTools(RedisBase):
             return {"status":False,
                     "notify":f"TicketCancelError ! message : {type(e)} {e}"}
         
-    
+    #自動載入購票視窗
     def TicketRestore(self,userSeatIndexKey,loginID):
         try:
             seatLockKey = self.r.get(userSeatIndexKey)
