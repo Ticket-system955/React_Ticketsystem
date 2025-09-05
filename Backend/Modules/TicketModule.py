@@ -9,12 +9,11 @@ async def Lock(request,reqT,redisT):
             loginID = request.session["UserID"]
             
             data = response["data"]
-            return {"notify":str(data)}
             area = data["area"]
             row = data["row"]
             column = data["column"]
             event_id = data["event_id"]
-            
+
             seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
             userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
             
