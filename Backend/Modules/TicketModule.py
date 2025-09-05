@@ -35,6 +35,7 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             loginID = request.session["UserID"]
             
             data = response["data"]
+            return {"notify":str(data)}
             event_id = data["event_id"]
             area = data["area"]
             row = data["row"]
