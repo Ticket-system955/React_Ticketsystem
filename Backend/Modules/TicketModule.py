@@ -93,14 +93,15 @@ async def CancelTicket(request,reqT,redisT):
     response = await reqT.GetJson(request = request)
     if response["status"]:
         try:
-            registerID = request.session["RegisterID"]
+            #registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             data = response["data"]
             event_id = data["event_id"]
             area = data["area"]
             row = data["row"]
             column = data["column"]
             seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
-            userSeatIndexKey = f"<userSeatIndex>:[{registerID}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
             TicketCancel_result = redisT.TicketCancel(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey)
             if TicketCancel_result["status"]:
                 TicketCancel_result["notify"] = f"{seatLockKey} 已釋放 !"
@@ -113,9 +114,10 @@ async def CancelTicket(request,reqT,redisT):
 
 async def RestoreTicket(request,redisT):
     try:
-        registerID = request.session["RegisterID"]
-        userSeatIndexKey = f"<userSeatIndex>:[{registerID}]"
-        TicketRestore_result = redisT.TicketRestore(userSeatIndexKey=userSeatIndexKey,registerID=registerID)
+        #registerID = request.session["RegisterID"]
+        loginID = request.session["UserID"]
+        userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
+        TicketRestore_result = redisT.TicketRestore(userSeatIndexKey=userSeatIndexKey,loginID=loginID)
         return TicketRestore_result
     except Exception as e:
         return {"status":False,
