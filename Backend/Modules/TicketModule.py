@@ -9,6 +9,7 @@ async def Lock(request,reqT,redisT):
             loginID = request.session["UserID"]
             
             data = response["data"]
+            return {"notify":str(data)}
             area = data["area"]
             row = data["row"]
             column = data["column"]
