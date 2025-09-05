@@ -36,7 +36,6 @@ class RedisTools(RedisBase):
             return {"status":False,
                     "notify":f"TicketLockError ! message : {type(e)} {e}"}
         
-    
     def TicketSuccess(self,event_id,loginID,seatLockKey,userSeatIndexKey):
         try:
             self.r.lpush(event_id,loginID)
@@ -61,7 +60,7 @@ class RedisTools(RedisBase):
         except Exception as e:
             return {"status":False,
                     "notify":f"TicketSuccessError ! message : {type(e)} {e}"}
-    
+            
     def TicketCancel(self,seatLockKey,userSeatIndexKey):
         try:
             deleteSeatLockKey = self.r.delete(seatLockKey)
@@ -80,7 +79,6 @@ class RedisTools(RedisBase):
             return {"status":False,
                     "notify":f"TicketCancelError ! message : {type(e)} {e}"}
         
-    
     def TicketRestore(self,userSeatIndexKey,loginID):
         try:
             seatLockKey = self.r.get(userSeatIndexKey)
