@@ -1,23 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-/**
- * React Ticket Flow Demo
- * -----------------------------------------------------------
- * 這是一個可直接拿來改的 React 範本，用來串接你的票務 API：
- *   POST /ticket/lock       -> 鎖座位
- *   POST /ticket           -> 驗證 TOTP 並完成購買
- *   POST /ticket/check     -> 檢查使用者在某活動的狀態
- *   POST /ticket/cancel    -> 取消鎖位
- *   POST /ticket/restore   -> 恢復使用者上一個鎖位狀態
- *   POST /ticket/purchased -> 查詢已售出清單
- *
- * 注意：
- * 1. 將 BASE_URL 改成你的後端網域（保留 / 開頭的 path）。
- * 2. 後端需設定好 Session / CORS；前端 fetch 需加 credentials: 'include'。
- * 3. 這份是單檔範例，實務上建議把 API 客戶端拆到 /lib/api.js。
- */
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://reactticketsystem-production.up.railway.app"; // 改成你的 API Host
+const BASE_URL = "https://reactticketsystem-production.up.railway.app"; // 改成你的 API Host
 
 // ---- 小工具：包裝 fetch ----
 async function apiPost(path, body) {
