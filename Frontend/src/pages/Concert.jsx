@@ -18,7 +18,7 @@ export default function Concert() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
-    fetch('https://reactticketsystem-production.up.railway.app/check_login', {
+    fetch('https://reactticketsystem-production.up.railway.app/auth/login/check', {
       credentials: 'include'
     })
       .then(res => res.json())
