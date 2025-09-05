@@ -160,4 +160,3 @@ async def CheckTicketPurchased(request, reqT, sqlT):
     except Exception as e:
         return {"status": False,
                 "notify": f"TicketModule_CheckTicketPurchasedError ! message : [{type(e)} {e}]"}
-
