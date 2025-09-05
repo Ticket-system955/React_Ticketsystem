@@ -31,44 +31,50 @@ async def Lock(request,reqT,redisT):
 
 async def GetTicketData(request,reqT,sqlT,totpT,redisT):
     
+    
     response = await reqT.GetJson(request = request)
     if response["status"]:
-        registerID = request.session["RegisterID"]
-        loginID = request.session["UserID"]
+        
+        try:
+            registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             
-        data = response["data"]
-        return {"notify":data["event_id"]}
-        event_id = data["event_id"]
-        area = data["area"]
-        row = data["row"]
-        column = data["column"]
-        totpcode = data["totpcode_input"]
-                
-        seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
-        userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
-    
-        GetSecret_result = sqlT.GetSecret(loginID=loginID)
-        if not GetSecret_result["status"]:
-            return GetSecret_result
+            data = response["data"]
+            event_id = data["event_id"]
+            area = data["area"]
+            row = data["row"]
+            column = data["column"]
+            totpcode = data["totpcode_input"]
             
-        secret = GetSecret_result["secret"]
-        totpobject = totpT.GetTotpObject(secret)
+            seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
+
+            GetSecret_result = sqlT.GetSecret(loginID=loginID)
+            if not GetSecret_result["status"]:
+                return GetSecret_result
+            
+            secret = GetSecret_result["secret"]
+            totpobject = totpT.GetTotpObject(secret)
+            
+            if totpcode == str(totpobject.now()):
                 
-        if totpcode == str(totpobject.now()):
-                
-            InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
-            if InsertTicketData_result["status"]:
+                InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
+                if InsertTicketData_result["status"]:
                     
-                TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,loginID=loginID,seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey)
-                if not TicketSuccess_result["status"]:
-                    return TicketSuccess_result
+                    TicketSuccess_result = redisT.TicketSuccess(event_id=event_id,loginID=loginID,seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey)
+                    if not TicketSuccess_result["status"]:
+                        return TicketSuccess_result
                     
-                return {"status":True,
-                        "notify":"票券資料寫入成功 !"}
-            return InsertTicketData_result
-        else:
+                    return {"status":True,
+                            "notify":"票券資料寫入成功 !"}
+                return InsertTicketData_result
+            else:
+                return {"status":False,
+                        "notify":"驗證碼輸入錯誤 !"}
+        except Exception as e:
             return {"status":False,
-                    "notify":"驗證碼輸入錯誤 !"}
+                    "notify":f"TicketModule_GetTicketDataError ! message : [{type(e)} {e}]"}
+    return response
 
 
 async def CheckTicket(request,reqT,redisT):
