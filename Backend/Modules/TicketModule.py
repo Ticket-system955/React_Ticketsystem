@@ -154,3 +154,8 @@ async def CheckTicketPurchased(request, reqT, sqlT):
             "purchased": jsonable_encoder(purchased["purchasedData"]),
             "event_id": event_id
         }
+
+    except Exception as e:
+        return {"status": False,
+                "notify": f"TicketModule_CheckTicketPurchasedError ! message : [{type(e)} {e}]"}
+
