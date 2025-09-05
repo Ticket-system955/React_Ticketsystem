@@ -1,3 +1,4 @@
+'''將使用者傳入的資料作例外處理跟解析'''
 class RequestTools:
     async def GetJson(self,request):
         try:
