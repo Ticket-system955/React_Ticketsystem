@@ -14,13 +14,13 @@ const areaMap = {
 };
 
 const seatConfig = [
-  { id: 'rock-left', rows: 5, cols: 10, className: 'bg-red-500' },
-  { id: 'rock-center', rows: 5, cols: 20, className: 'bg-red-500' },
-  { id: 'rock-right', rows: 5, cols: 10, className: 'bg-red-500' },
-  { id: 'b-area', rows: 20, cols: 10, className: 'bg-orange-400' },
-  { id: 'a-area', rows: 20, cols: 20, className: 'bg-yellow-300' },
-  { id: 'c-area', rows: 20, cols: 10, className: 'bg-pink-300' },
-  { id: 'd-area', rows: 10, cols: 20, className: 'bg-purple-300' }
+  { id: '搖滾區左', rows: 5, cols: 10, className: 'bg-red-500' },
+  { id: '搖滾區中', rows: 5, cols: 20, className: 'bg-red-500' },
+  { id: '搖滾區右', rows: 5, cols: 10, className: 'bg-red-500' },
+  { id: 'A區', rows: 20, cols: 10, className: 'bg-orange-400' },
+  { id: 'B區', rows: 20, cols: 20, className: 'bg-yellow-300' },
+  { id: 'C區', rows: 20, cols: 10, className: 'bg-pink-300' },
+  { id: 'D區', rows: 10, cols: 20, className: 'bg-purple-300' }
 ];
 
 // 小工具：把 fetch 的請求與回應完整印出
@@ -249,7 +249,7 @@ export default function Ticket() {
         return;
       }
 
-      alert('購票成功');
+  alert(json.notify || '購票成功');
 
       // 成功後清理 UI 狀態
       setShowVerify(false);
