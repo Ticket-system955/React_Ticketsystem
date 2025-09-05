@@ -81,7 +81,7 @@ class RedisTools(RedisBase):
             deleteSeatLockKey = self.r.delete(seatLockKey)
             deleteUserSeatIndexKey = self.r.delete(userSeatIndexKey)
             if deleteSeatLockKey and deleteUserSeatIndexKey:
-                return {"status":True,"notify":f"{seatLockKey} & {userSeatIndexKey} 已從 Redis 中刪除 !"}
+                return {"status":True,"notify":"鎖票鍵移除時出現問題，請檢查鎖票序列 !"}
             else:
                 notify = []
                 if not deleteSeatLockKey:
