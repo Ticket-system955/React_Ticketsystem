@@ -25,20 +25,25 @@ redisT = RedisTools(URL=url["redis"])
 KEY = "ticket_key"
 app.add_middleware(SessionMiddleware,secret_key=KEY)
 
+'''註冊完成顯示QRcode'''
 @app.post("/auth/verify/init")
 async def ShowQRcode(request: Request):
     response = await RegisterModule.ShowQRcode(request=request,reqT=reqT,totpT=totpT)
     return JSONResponse(response)
 
+'''送出註冊資料，並驗證Totp驗證碼'''
 @app.post("/auth/verify/confirm")
 async def Register(request: Request):
     response = await RegisterModule.CheckANDRegister(request=request,reqT=reqT,sqlT=sqlT,totpT=totpT)
     return JSONResponse(response)
 
+'''驗證使用者登入'''
 @app.post("/auth/login")
 async def Login(request:Request):
     response = await LoginModule.Check(request=request,reqT=reqT,sqlT=sqlT)
     return JSONResponse(response)
+
+
 @app.get("/check_login")
 #@app.get("/auth/login/check")
 async def check_login(request: Request):
