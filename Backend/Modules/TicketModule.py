@@ -5,7 +5,8 @@ async def Lock(request,reqT,redisT):
     response = await reqT.GetJson(request = request)
     if response["status"]:
         try:
-            registerID = request.session["RegisterID"]
+            #registerID = request.session["RegisterID"]
+            loginID = request.session["UserID"]
             
             data = response["data"]
             area = data["area"]
@@ -14,9 +15,9 @@ async def Lock(request,reqT,redisT):
             event_id = data["event_id"]
             
             seatLockKey = f"<seatLock>:[{event_id}:{area}:{row}:{column}]"
-            userSeatIndexKey = f"<userSeatIndex>:[{registerID}]"
+            userSeatIndexKey = f"<userSeatIndex>:[{loginID}]"
             
-            TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,registerID=registerID)
+            TicketLock_result = redisT.TicketLock(seatLockKey=seatLockKey,userSeatIndexKey=userSeatIndexKey,loginID=loginID)
             return TicketLock_result
         except Exception as e:
             return {"status":False,
