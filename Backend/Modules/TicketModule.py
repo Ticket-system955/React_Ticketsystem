@@ -50,11 +50,17 @@ async def GetTicketData(request,reqT,sqlT,totpT,redisT):
             if not GetSecret_result["status"]:
                 return GetSecret_result
             
+            GetSecret_result = totpT.GetSecret(request=request)
+            if not GetSecret_result["status"]:
+                return GetSecret_result
             secret = GetSecret_result["secret"]
-            totpobject = totpT.GetTotpObject(secret)
+            
+            GetTotpObject_result = totpT.GetTotpObject(secret=secret)
+            if not GetTotpObject_result["status"]:
+                return GetTotpObject_result
+            totpobject = GetTotpObject_result["totpobject"]
             
             if totpcode == str(totpobject.now()):
-                
                 InsertTicketData_result = sqlT.InsertTicketData(registerID=registerID,event_id=event_id,area=area,row=row,column=column)
                 if InsertTicketData_result["status"]:
                     
