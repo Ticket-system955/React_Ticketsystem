@@ -48,7 +48,10 @@ class SqlBase:
         return ticket
 
 
-''''''
+'''子類別
+    存放:
+        1.各模組需要的功能
+        2.簡易例外處理'''
 class SqlTools(SqlBase):
     
     def __init__(self,URL):
