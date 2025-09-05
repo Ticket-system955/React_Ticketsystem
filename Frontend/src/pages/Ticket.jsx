@@ -52,7 +52,7 @@ async function logFetch(url, options) {
 
 export default function Ticket() {
   const { id } = useParams();                     
-  const eventIdFromUrl = Number(id);              // ✅ 修正：用 URL 參數，不要用 concertsData.id（陣列）
+  const eventIdFromUrl = Number(id);             
   const concert = concertsData.find(c => String(c.id) === String(id));
 
   const [selected, setSelected] = useState(null);
@@ -85,8 +85,7 @@ export default function Ticket() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',   // 需要 session
             body: JSON.stringify({
-                event_id: eventIdFromUrl  // ✅ 以 event_id 為主
-                // 若後端仍需 title/location 再加上：title, location
+            event_id: eventIdFromUrl  
             })
           }
         );
@@ -132,10 +131,11 @@ export default function Ticket() {
       totpcode_input: verifyCode,
       event_id: finalEventId
     };
-console.log("=== confirmSubmit payload keys & values ===");
-Object.entries(payload).forEach(([key, value]) => {
-  console.log(`${key}:`, value);
-});
+    //------
+    console.log("=== confirmSubmit payload keys & values ===");
+    Object.entries(payload).forEach(([key, value]) => {
+      console.log(`${key}:`, value);
+    });//----
     try {
       const { res, json } = await logFetch(
         'https://reactticketsystem-production.up.railway.app/ticket',
@@ -143,7 +143,7 @@ Object.entries(payload).forEach(([key, value]) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ event_id: eventIdFromUrl })
+          body: JSON.stringify(payload)
         }
       );
 
