@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import image from '../assets/image';
 import concertsData from '../data/concerts';
 
@@ -52,6 +52,7 @@ async function logFetch(url, options) {
 
 export default function Ticket() {
   const { id } = useParams();
+   const navigate = useNavigate();
   const eventIdFromUrl = Number(id);
   const concert = concertsData.find(c => String(c.id) === String(id));
 
@@ -65,10 +66,11 @@ export default function Ticket() {
   const [verifyCode, setVerifyCode] = useState('');
   const [isLocking, setIsLocking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [canBuy, setCanBuy] = useState(true);
+  const [checkMsg, setCheckMsg] = useState('');
 
-  // 本地鎖與倒數（避免驗證失敗/取消時座位長期反灰）
   const [lockedByMe, setLockedByMe] = useState(null); // {area,row,column,expiresAt}
-  const [lockCountdown, setLockCountdown] = useState(null); // 秒
+  const [lockCountdown, setLockCountdown] = useState(null); 
 
   const isCodeReady = /^\d{6}$/.test(verifyCode);
 
@@ -190,7 +192,7 @@ export default function Ticket() {
       }
 
       // 設定本地鎖 & 倒數
-      const ttlSec = Number(json.ttl || 120);
+      const ttlSec = Number(json.ttl || 60);
       setLockedByMe({ area: payload.area, row: payload.row, column: payload.column, expiresAt: Date.now() + ttlSec * 1000 });
       setLockCountdown(ttlSec);
 
@@ -258,6 +260,7 @@ export default function Ticket() {
       setVerifyCode('');
       setLockedByMe(null);
       setLockCountdown(null);
+      navigate('/');
 
       // 重新抓一次 purchased，確保畫面同步
       try {
@@ -451,4 +454,4 @@ export default function Ticket() {
       )}
     </div>
   );
-}
+}//新增返回上一頁索票取消
