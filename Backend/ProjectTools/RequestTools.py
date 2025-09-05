@@ -1,4 +1,6 @@
+#取得前端資料
 class RequestTools:
+    #解析
     async def GetJson(self,request):
         try:
             data = await request.json()
