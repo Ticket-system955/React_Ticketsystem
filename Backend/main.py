@@ -131,7 +131,7 @@ async def check_login(request: Request):
 async def Logout(request:Request):
     response = await LogoutModule.Logout(request=request)
     return JSONResponse(response)
-
+'''
 @app.get("/profile")
 async def get_user_profile(request: Request):
     # 沒有登入 → 回 401
@@ -151,7 +151,11 @@ async def get_user_profile(request: Request):
             },
         }
     )
-       
+    '''
+@app.post("/profile")
+async def Profile(request:Request):
+    response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
+    return JSONResponse(response)
  #   response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
   #  return JSONResponse(response)
        
