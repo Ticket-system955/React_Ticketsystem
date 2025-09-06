@@ -24,10 +24,13 @@ def GetProfileData(request,sqlT):
         ticketData = GetTicketData_result["ticketData"]
 
         profileData = dict(zip(profileColumn+["ticket"],profileData+[ticketData]))
-
+        userID = request.session["UserID"]
+        userName = request.session["UserName"]
         return {"status":True,
                 "notify":"會員資料提取完成 !",
-                "profileData":jsonable_encoder(profileData)}
+                "profileData":jsonable_encoder(profileData),
+               "user_id":userID,
+                "name":userName}
     
     except Exception as e:
         return {"status":True,
