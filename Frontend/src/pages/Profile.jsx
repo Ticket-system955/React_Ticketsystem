@@ -13,7 +13,7 @@ export default function Profile() {
     ;(async () => {
       try {
         const res = await axios.get(
-          'https://reactticketsystem-production.up.railway.app/profile/full',
+          'https://reactticketsystem-production.up.railway.app/profile',
           { withCredentials: true, signal: controller.signal }
         )
         if (res.data?.status) {
