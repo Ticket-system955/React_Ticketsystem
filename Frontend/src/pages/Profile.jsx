@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function Profile() {
   const [user, setUser] = useState(null)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -13,8 +14,7 @@ export default function Profile() {
           withCredentials: true
         })
         if (res.data.status) {
-          setUser(res.data.user)
-          console(res.data)
+          setUser(res.data.profileData)
         } else {
           navigate('/auth')
         }
@@ -60,18 +60,25 @@ export default function Profile() {
             <th className="border px-4 py-2">座位</th>
           </tr>
         </thead>
-        <tbody>
-          {user.tickets?.map((ticket, idx) => (
-            <tr key={idx}>
-              <td className="border px-4 py-2">{ticket.title}</td>
-              <td className="border px-4 py-2">{ticket.date}</td>
-              <td className="border px-4 py-2">{ticket.location}</td>
-              <td className="border px-4 py-2">{ticket.area}</td>
-              <td className="border px-4 py-2">{ticket.roe}</td>
-              <td className="border px-4 py-2">{ticket.column}</td>
-            </tr>
-          ))}
-        </tbody>
+          <tbody>
+            {user.tickets?.length ? user.tickets.map((ticket, idx) => (
+              <tr key={idx}>
+                <td className="border px-4 py-2">{ticket.title}</td>
+                <td className="border px-4 py-2">{ticket.date}</td>
+                <td className="border px-4 py-2">{ticket.location}</td>
+                <td className="border px-4 py-2">
+                  {ticket.area ? `${ticket.area}區 ` : ''}
+                  {ticket.row ? `${ticket.row}排` : ''}   {/* 修正這裡 */}
+                  {ticket.column ? `${ticket.column}號` : ''}
+                  {!ticket.area && !ticket.row && !ticket.column ? '—' : ''}
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td className="border px-4 py-3 text-center" colSpan={4}>目前沒有訂票紀錄</td>
+              </tr>
+            )}
+          </tbody>
       </table>
 
       <div className="flex justify-center gap-4 mt-6">
