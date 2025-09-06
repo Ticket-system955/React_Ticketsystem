@@ -21,9 +21,9 @@ export default function Profile() {
         console.error(err)
         navigate('/auth')
       }
+     console.log('[Profile API 回傳]', res.data)
     }
     fetchProfile()
-    console.log('[Profile API 回傳]', res.data)
   }, [])
 
   if (!user) return <div className="p-8">載入中...</div>
@@ -42,8 +42,8 @@ export default function Profile() {
           <tr><td className="border px-4 py-2">性別</td><td className="border px-4 py-2">{user.gender}</td></tr>
           <tr><td className="border px-4 py-2">生日</td><td className="border px-4 py-2">{user.birthday}</td></tr>
           <tr><td className="border px-4 py-2">電子信箱</td><td className="border px-4 py-2">{user.email}</td></tr>
-          <tr><td className="border px-4 py-2">電話號碼</td><td className="border px-4 py-2">{user.phone_number}</td></tr>
-          <tr><td className="border px-4 py-2">手機號碼</td><td className="border px-4 py-2">{user.mobile_number}</td></tr>
+          <tr><td className="border px-4 py-2">電話號碼</td><td className="border px-4 py-2">{user.phone}</td></tr>
+          <tr><td className="border px-4 py-2">手機號碼</td><td className="border px-4 py-2">{user.mobile}</td></tr>
           <tr><td className="border px-4 py-2">住家地址</td><td className="border px-4 py-2">{user.address}</td></tr>
         </tbody>
       </table>
@@ -61,7 +61,6 @@ export default function Profile() {
         <tbody>
           {user.tickets?.map((ticket, idx) => (
             <tr key={idx}>
-
               <td className="border px-4 py-2">{ticket.event}</td>
               <td className="border px-4 py-2">{ticket.date}</td>
               <td className="border px-4 py-2">{ticket.venue}</td>
