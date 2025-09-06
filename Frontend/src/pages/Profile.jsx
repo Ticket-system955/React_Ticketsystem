@@ -21,12 +21,10 @@ export default function Profile() {
         console.error(err)
         navigate('/auth')
       }
-    console.log(res.profileData)
     }
     fetchProfile()
 
   }, [])
-   console.log(res.profileData)
 
 
   if (!user) return <div className="p-8">載入中...</div>
