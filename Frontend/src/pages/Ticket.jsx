@@ -427,7 +427,7 @@ export default function Ticket() {
             <table className="mb-4">
               <tbody>
                 <tr><td className="pr-2">場次：</td><td>{eventTitle}</td></tr>
-                <tr><td className="pr-2">區域：</td><td>{areaMap[selected.area]}</td></tr>
+                <tr><td className="pr-2">區域：</td><td>{selected.area}</td></tr>
                 <tr><td className="pr-2">位置：</td><td>{selected.row}排{selected.col}位</td></tr>
               </tbody>
             </table>
