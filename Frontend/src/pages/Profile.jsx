@@ -13,8 +13,7 @@ export default function Profile() {
           withCredentials: true
         })
         if (res.data.status) {
-          // ✅ 改成 profileData
-          setUser(res.data.profileData)
+          setUser(res.data.user)
         } else {
           navigate('/auth')
         }
@@ -24,7 +23,7 @@ export default function Profile() {
       }
     }
     fetchProfile()
-  }, [navigate])
+  }, [])
 
   if (!user) return <div className="p-8">載入中...</div>
 
