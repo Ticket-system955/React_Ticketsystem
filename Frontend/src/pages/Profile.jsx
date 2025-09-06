@@ -13,7 +13,8 @@ export default function Profile() {
           withCredentials: true
         })
         if (res.data.status) {
-          setUser(res.data.user)
+          // ✅ 改成 profileData
+          setUser(res.data.profileData)
         } else {
           navigate('/auth')
         }
@@ -23,12 +24,13 @@ export default function Profile() {
       }
     }
     fetchProfile()
-  }, [])
+  }, [navigate])
 
   if (!user) return <div className="p-8">載入中...</div>
 
   return (
-    <div className="mt-20 max-w-3xl mx-auto mt-8 bg-white shadow rounded-lg p-6">
+    // ✅ 去掉重複的 mt-8
+    <div className="mt-20 max-w-3xl mx-auto bg-white shadow rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
         <span>👤</span> 會員中心
       </h2>
@@ -41,8 +43,9 @@ export default function Profile() {
           <tr><td className="border px-4 py-2">性別</td><td className="border px-4 py-2">{user.gender}</td></tr>
           <tr><td className="border px-4 py-2">生日</td><td className="border px-4 py-2">{user.birthday}</td></tr>
           <tr><td className="border px-4 py-2">電子信箱</td><td className="border px-4 py-2">{user.email}</td></tr>
-          <tr><td className="border px-4 py-2">電話號碼</td><td className="border px-4 py-2">{user.phone}</td></tr>
-          <tr><td className="border px-4 py-2">手機號碼</td><td className="border px-4 py-2">{user.mobile}</td></tr>
+          {/* ✅ 欄位名對齊後端 */}
+          <tr><td className="border px-4 py-2">電話號碼</td><td className="border px-4 py-2">{user.phone_number}</td></tr>
+          <tr><td className="border px-4 py-2">手機號碼</td><td className="border px-4 py-2">{user.mobile_number}</td></tr>
           <tr><td className="border px-4 py-2">住家地址</td><td className="border px-4 py-2">{user.address}</td></tr>
         </tbody>
       </table>
@@ -58,14 +61,24 @@ export default function Profile() {
           </tr>
         </thead>
         <tbody>
-          {user.tickets?.map((ticket, idx) => (
+          {user.tickets?.length ? user.tickets.map((ticket, idx) => (
             <tr key={idx}>
-              <td className="border px-4 py-2">{ticket.event}</td>
+              {/* ✅ 票券欄位名對齊後端 */}
+              <td className="border px-4 py-2">{ticket.title}</td>
               <td className="border px-4 py-2">{ticket.date}</td>
-              <td className="border px-4 py-2">{ticket.venue}</td>
-              <td className="border px-4 py-2">{ticket.seat}</td>
+              <td className="border px-4 py-2">{ticket.location}</td>
+              <td className="border px-4 py-2">
+                {ticket.area ? `${ticket.area}區 ` : ''}
+                {ticket.row ? `${ticket.row}排` : ''}
+                {ticket.column ? `${ticket.column}號` : ''}
+                {!ticket.area && !ticket.row && !ticket.column ? '—' : ''}
+              </td>
             </tr>
-          ))}
+          )) : (
+            <tr>
+              <td className="border px-4 py-3 text-center" colSpan={4}>目前沒有訂票紀錄</td>
+            </tr>
+          )}
         </tbody>
       </table>
 
