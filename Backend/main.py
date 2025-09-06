@@ -134,14 +134,17 @@ async def Logout(request:Request):
 
 @app.get("/profile")
 async def get_user_profile(request: Request):
+       
+       response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
+       return JSONResponse(response)
+'''
     if "UserID" not in request.session:
         return JSONResponse({"status": False, "notify": "未登入"}, status_code=401)
     else:
-       response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
-       return JSONResponse(response)
 
 
-'''
+
+
 @app.post("/profile")
 async def Profile(request:Request):
     response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
