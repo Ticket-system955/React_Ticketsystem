@@ -52,7 +52,7 @@ async function logFetch(url, options) {
 
 export default function Ticket() {
   const { id } = useParams();
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const eventIdFromUrl = Number(id);
   const concert = concertsData.find(c => String(c.id) === String(id));
 
@@ -66,9 +66,8 @@ export default function Ticket() {
   const [verifyCode, setVerifyCode] = useState('');
   const [isLocking, setIsLocking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [canBuy, setCanBuy] = useState(true);
-  const [checkMsg, setCheckMsg] = useState('');
 
+  // 本地鎖與倒數（避免驗證失敗/取消時座位長期反灰）
   const [lockedByMe, setLockedByMe] = useState(null); // {area,row,column,expiresAt}
   const [lockCountdown, setLockCountdown] = useState(null); 
 
@@ -157,6 +156,42 @@ export default function Ticket() {
     setShowConfirm(false);
   }
 
+  async function checkAndLock() {
+    const finalEventId = Number(eventID ?? eventIdFromUrl);
+    if (!selected || !finalEventId) {
+      alert('缺少座位或活動編號'); 
+      return;
+    }
+    if (isLocking) return;                 
+    setIsLocking(true);
+
+    try {
+      // 先檢查一人限購
+      const { res, json } = await logFetch(
+        'https://reactticketsystem-production.up.railway.app/ticket/check',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ event_id: finalEventId }),
+        }
+      );
+
+      if (!res.ok || !json?.status) {
+        alert(json?.notify || '您已經購買過本場票券，無法再次購買');
+        return;
+      }
+
+      // 通過檢查才進行鎖位
+      await lockSeat();
+    } catch (e) {
+      console.error('[checkAndLock] error', e);
+      alert('檢查失敗，請稍後再試');
+    } finally {
+      setIsLocking(false);
+    }
+  }
+
   // 鎖位
   async function lockSeat() {
     const finalEventId = Number(eventID ?? eventIdFromUrl);
@@ -168,7 +203,7 @@ export default function Ticket() {
 
     const payload = {
       event_id: finalEventId,
-      area: selected.area, 
+      area: selected.area,    
       row: selected.row,
       column: selected.col
     };
@@ -246,8 +281,7 @@ export default function Ticket() {
 
       if (!res.ok || !json?.status) {
         alert(json?.notify || `購票失敗（HTTP ${res.status}）`);
-        // 失敗可主動釋放鎖（若需要）
-        // await unlockSeat();
+        await unlockSeat();
         return;
       }
 
@@ -374,7 +408,7 @@ export default function Ticket() {
 
       <p className="mt-4 font-semibold text-red-600">
         {selected
-          ? `${areaMap[selected.area] || selected.area} ${selected.row}排 ${selected.col}位`
+          ? `${areaMap[selected.area]} ${selected.row}排 ${selected.col}位`
           : '尚未選擇任何座位'}
       </p>
 
@@ -393,13 +427,13 @@ export default function Ticket() {
             <table className="mb-4">
               <tbody>
                 <tr><td className="pr-2">場次：</td><td>{eventTitle}</td></tr>
-                <tr><td className="pr-2">區域：</td><td>{areaMap[selected.area] || selected.area}</td></tr>
+                <tr><td className="pr-2">區域：</td><td>{areaMap[selected.area]}</td></tr>
                 <tr><td className="pr-2">位置：</td><td>{selected.row}排{selected.col}位</td></tr>
               </tbody>
             </table>
             <div className="text-right">
               <button
-                onClick={lockSeat}
+                onClick={checkAndLock}
                 disabled={isLocking}
                 className="bg-green-600 text-white px-4 py-2 rounded mr-2"
               >
@@ -454,4 +488,5 @@ export default function Ticket() {
       )}
     </div>
   );
-}//新增返回上一頁索票取消
+}
+//新增返回上一步取消索票
