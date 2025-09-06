@@ -145,7 +145,6 @@ async def get_user_profile(request: Request):
         }
     }
 
-
 @app.get("/auth/user")
 async def User(request : Request):
     response = IndexModule.CheckUserLogin(request=request)
@@ -181,7 +180,10 @@ async def User(request : Request):
 async def LockTicket(request:Request):
     response = await TicketModule.Lock(request=request,reqT=reqT,redisT=redisT)
     return JSONResponse(response)
-
+'''
+1.使用時機:購票時
+2.功能:將票券資料寫入資料庫
+'''
 @app.post("/ticket")
 async def GetTicket(request : Request):
     response = await TicketModule.GetTicketData(request=request,reqT=reqT,sqlT=sqlT,totpT=totpT,redisT=redisT)
