@@ -17,9 +17,7 @@ def GetProfileData(request,sqlT):
         if not GetProfileData_result["status"]:
             return GetProfileData_result
         profileData = GetProfileData_result["profileData"]
-        return {"status":True,
-                "notify":"會員資料提取完成 !",
-                "profileData":jsonable_encoder(profileData)}
+
         GetTicketData_result = sqlT.GetTicketData(registerID=registerID,ticketColumn=ticketColumn)
         if not GetTicketData_result["status"]:
             return GetTicketData_result
@@ -27,7 +25,9 @@ def GetProfileData(request,sqlT):
 
         profileData = dict(zip(profileColumn+["ticket"],profileData+[ticketData]))
 
-
+        return {"status":True,
+                "notify":"會員資料提取完成 !",
+                "profileData":jsonable_encoder(profileData)}
     
     except Exception as e:
         return {"status":True,
