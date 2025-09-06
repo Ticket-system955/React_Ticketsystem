@@ -131,7 +131,7 @@ async def check_login(request: Request):
 async def Logout(request:Request):
     response = await LogoutModule.Logout(request=request)
     return JSONResponse(response)
-
+'''
 @app.get("/profile")
 async def get_user_profile(request: Request):
     if "UserID" not in request.session:
@@ -144,7 +144,13 @@ async def get_user_profile(request: Request):
             "name": request.session["UserName"],
         }
     }
+'''
 
+@app.post("/profile")
+async def Profile(request:Request):
+    response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
+    return JSONResponse(response)
+       
 @app.get("/auth/user")
 async def User(request : Request):
     response = IndexModule.CheckUserLogin(request=request)
