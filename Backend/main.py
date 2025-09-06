@@ -143,7 +143,8 @@ async def get_user_profile(request: Request):
     response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
 
     return JSONResponse({"status":True,
-                        "user":response["profileData"]})
+                        "user":response["profileData"],
+                        "ticket":response["profileData"]["ticket"]})
 
            # "status": True,
            # "user": {"login_id": request.session["UserID"],"name": request.session["UserName"],response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)},
