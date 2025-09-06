@@ -141,12 +141,12 @@ async def get_user_profile(request: Request):
        return JSONResponse(response)
 
 
-
+'''
 @app.post("/profile")
 async def Profile(request:Request):
     response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
     return JSONResponse(response)
-       
+'''
 @app.get("/auth/user")
 async def User(request : Request):
     response = IndexModule.CheckUserLogin(request=request)
