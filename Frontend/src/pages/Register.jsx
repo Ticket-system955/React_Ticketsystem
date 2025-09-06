@@ -395,3 +395,4 @@ export default function Register() {
     </div>
   )
 }
+//因增身分正則
