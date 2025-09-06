@@ -144,8 +144,10 @@ async def get_user_profile(request: Request):
     # 已登入 → 回使用者資料
     return JSONResponse(
         {
-            "status": True,
-            "user": {"login_id": request.session["UserID"],"name": request.session["UserName"],response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)},
+               response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
+               return response
+           # "status": True,
+           # "user": {"login_id": request.session["UserID"],"name": request.session["UserName"],response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)},
         }
     )
     '''
