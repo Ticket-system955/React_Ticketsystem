@@ -14,6 +14,7 @@ export default function Profile() {
         })
         if (res.data.status) {
           setUser(res.data.user)
+          console(res.data)
         } else {
           navigate('/auth')
         }
@@ -43,8 +44,8 @@ export default function Profile() {
           <tr><td className="border px-4 py-2">性別</td><td className="border px-4 py-2">{user.gender}</td></tr>
           <tr><td className="border px-4 py-2">生日</td><td className="border px-4 py-2">{user.birthday}</td></tr>
           <tr><td className="border px-4 py-2">電子信箱</td><td className="border px-4 py-2">{user.email}</td></tr>
-          <tr><td className="border px-4 py-2">電話號碼</td><td className="border px-4 py-2">{user.phone}</td></tr>
-          <tr><td className="border px-4 py-2">手機號碼</td><td className="border px-4 py-2">{user.mobile}</td></tr>
+          <tr><td className="border px-4 py-2">電話號碼</td><td className="border px-4 py-2">{user.phone_number}</td></tr>
+          <tr><td className="border px-4 py-2">手機號碼</td><td className="border px-4 py-2">{user.mobile_number}</td></tr>
           <tr><td className="border px-4 py-2">住家地址</td><td className="border px-4 py-2">{user.address}</td></tr>
         </tbody>
       </table>
@@ -62,10 +63,12 @@ export default function Profile() {
         <tbody>
           {user.tickets?.map((ticket, idx) => (
             <tr key={idx}>
-              <td className="border px-4 py-2">{ticket.event}</td>
+              <td className="border px-4 py-2">{ticket.title}</td>
               <td className="border px-4 py-2">{ticket.date}</td>
-              <td className="border px-4 py-2">{ticket.venue}</td>
-              <td className="border px-4 py-2">{ticket.seat}</td>
+              <td className="border px-4 py-2">{ticket.location}</td>
+              <td className="border px-4 py-2">{ticket.area}</td>
+              <td className="border px-4 py-2">{ticket.roe}</td>
+              <td className="border px-4 py-2">{ticket.column}</td>
             </tr>
           ))}
         </tbody>
