@@ -140,17 +140,16 @@ async def get_user_profile(request: Request):
             {"status": False, "notify": "未登入"},
             status_code=401
         )
+    response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)
 
-    # 已登入 → 回使用者資料
-    return JSONResponse(
-        {
-            "status": True,
-            "user": {
-                "login_id": request.session["UserID"],
-                "name": request.session["UserName"],
-            },
-        }
-    )
+    return JSONResponse({"status":True,
+                        "user":response["profileData"],
+                        "ticket":response["profileData"]["ticket"]})
+
+           # "status": True,
+           # "user": {"login_id": request.session["UserID"],"name": request.session["UserName"],response = ProfileModule.GetProfileData(request=request,sqlT=sqlT)},
+
+    
     '''
 @app.post("/profile")
 async def Profile(request:Request):

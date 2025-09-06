@@ -28,9 +28,7 @@ def GetProfileData(request,sqlT):
         userName = request.session["UserName"]
         return {"status":True,
                 "notify":"會員資料提取完成 !",
-                "profileData":jsonable_encoder(profileData),
-               "user_id":userID,
-                "name":userName}
+                "profileData":jsonable_encoder(profileData)}
     
     except Exception as e:
         return {"status":True,
